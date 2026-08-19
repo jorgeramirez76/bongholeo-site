@@ -1,0 +1,35 @@
+{
+ "tee-white": {
+  "design_id": 5971521,
+  "skus": {
+   "S": "APQ-5971521S6A1",
+   "M": "APQ-5971521S7A1",
+   "L": "APQ-5971521S8A1",
+   "XL": "APQ-5971521S1A1",
+   "2XL": "APQ-5971521S2A1",
+   "3XL": "APQ-5971521S21A1"
+  }
+ },
+ "tee-black": {
+  "design_id": 5971522,
+  "skus": {
+   "S": "APQ-5971522S6A1",
+   "M": "APQ-5971522S7A1",
+   "L": "APQ-5971522S8A1",
+   "XL": "APQ-5971522S1A1",
+   "2XL": "APQ-5971522S2A1",
+   "3XL": "APQ-5971522S21A1"
+  }
+ },
+ "hoodie-black": {
+  "design_id": 5971523,
+  "skus": {
+   "S": "APQ-5971523S6A1",
+   "M": "APQ-5971523S7A1",
+   "L": "APQ-5971523S8A1",
+   "XL": "APQ-5971523S1A1",
+   "2XL": "APQ-5971523S2A1",
+   "3XL": "APQ-5971523S21A1"
+  }
+ }
+}
