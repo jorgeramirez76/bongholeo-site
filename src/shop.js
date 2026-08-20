@@ -46,7 +46,7 @@ export async function fetchProducts(handle = shopCollection) {
             featuredImage { url altText }
             priceRange { minVariantPrice { amount currencyCode } }
             variants(first: 30) {
-              nodes { id title availableForSale price { amount currencyCode } selectedOptions { name value } }
+              nodes { id title availableForSale price { amount currencyCode } selectedOptions { name value } image { url altText } }
             }
           }
         }
