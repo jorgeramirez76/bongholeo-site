@@ -253,13 +253,16 @@ export const faqs = [
   },
   {
     q: 'Where can I buy Bongholeo merch?',
-    a: 'Official Bongholeo merch — the "Gavels The Truth" crest tee at $39.99 and the hoodie at $59.99 — is sold on this site at bongholeo.com, printed to order and checked out through Shopify.',
+    a: 'Official Bongholeo merch — including the "Gavels The Truth" crest tee, the "In Cuffs" illustrated tee, and the heavyweight hoodie — is sold on this site at bongholeo.com, printed to order and checked out through Shopify.',
   },
 ]
 
-// Mirrors the live Shopify catalogue. Two products. Verified 2026-08-19.
+// Mirrors the Bongholeo-scoped Shopify collection. Product handles are the
+// stable join between this facts layer and the live Storefront API response.
 export const products = [
   {
+    handle: 'bongholeo-gavels-the-truth-tee',
+    tag: 'THE FIRST DROP',
     name: 'Gavels The Truth Tee',
     description:
       "Heavyweight ring-spun cotton tee with the full Bongholeo 'Gavels The Truth' crest, front-printed 11 inches wide.",
@@ -267,9 +270,34 @@ export const products = [
     price: '39.99',
   },
   {
+    handle: 'bongholeo-gavels-the-truth-hoodie',
+    tag: 'THE HEAVYWEIGHT',
     name: 'Gavels The Truth Hoodie',
     description: "Premium black fleece hoodie with the Bongholeo 'Gavels The Truth' crest.",
     image: '/media/merch/gavels-hoodie.webp',
     price: '59.99',
+  },
+  {
+    handle: 'bongholeo-in-cuffs-tee',
+    tag: 'NEW RELEASE',
+    route: '/products/bongholeo-in-cuffs-tee',
+    name: 'Bongholeo In Cuffs Tee',
+    description:
+      'Bella+Canvas ring-spun cotton tee with the illustrated Bongholeo In Cuffs scene in a jumbo full-color front print, scaled appropriately for each garment size.',
+    image: '/media/merch/bongholeo-in-cuffs-black-male.webp',
+    imagesByColor: {
+      Black: '/media/merch/bongholeo-in-cuffs-black-male.webp',
+      White: '/media/merch/bongholeo-in-cuffs-white-male.webp',
+    },
+    gallery: [
+      { src: '/media/merch/bongholeo-in-cuffs-black-male.webp', alt: 'Dark-blond male model wearing the black Bongholeo In Cuffs tee' },
+      { src: '/media/merch/bongholeo-in-cuffs-black-female.webp', alt: 'Blonde female model wearing the black Bongholeo In Cuffs tee' },
+      { src: '/media/merch/bongholeo-in-cuffs-white-male.webp', alt: 'Dark-blond male model wearing the white Bongholeo In Cuffs tee' },
+      { src: '/media/merch/bongholeo-in-cuffs-white-female.webp', alt: 'Blonde female model wearing the white Bongholeo In Cuffs tee' },
+    ],
+    price: '39.99',
+    colors: ['Black', 'White'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    lastmod: '2026-08-25',
   },
 ]

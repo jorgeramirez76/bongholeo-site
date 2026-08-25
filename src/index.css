@@ -875,6 +875,33 @@ footer .logo-img {
   margin: 14px 0 10px;
 }
 
+.merch-card h3 a:hover {
+  color: var(--purple-deep);
+}
+
+.merch-image-link {
+  display: block;
+}
+
+.merch-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font: 500 10px var(--mono);
+  letter-spacing: .1em;
+  color: var(--purple-deep);
+}
+
+.merch-details:hover {
+  gap: 12px;
+}
+
+.merch-details .arrow {
+  width: 12px;
+  height: 12px;
+}
+
 .merch-card>p {
   font-size: 14px;
   line-height: 1.6;

@@ -5,7 +5,11 @@
 // are rejected.
 const KEY = '4d6d7acc34a50eb0820183c55fb4b321'
 const HOST = 'bongholeo.com'
-const urlList = ['https://bongholeo.com/', 'https://bongholeo.com/cranford-july-7-2026']
+const urlList = [
+  'https://bongholeo.com/',
+  'https://bongholeo.com/cranford-july-7-2026',
+  'https://bongholeo.com/products/bongholeo-in-cuffs-tee',
+]
 
 const res = await fetch('https://api.indexnow.org/IndexNow', {
   method: 'POST',

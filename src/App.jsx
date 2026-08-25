@@ -6,8 +6,9 @@ import { shopConfigured, fetchProducts, createCheckout, formatPrice } from './sh
 import { videos, press, faqs, appearances, stats, products } from './facts.js'
 
 const merch = products.map((p, i) => ({
-  id: `fallback-${i}`, name: p.name, edition: 'BONGHOLEO', copy: p.description,
-  price: `$${p.price}`, image: p.image, tag: i === 0 ? 'THE FIRST DROP' : 'THE HEAVYWEIGHT',
+  id: p.handle || `fallback-${i}`, name: p.name, edition: 'BONGHOLEO', copy: p.description,
+  price: `$${p.price}`, image: p.image, imagesByColor: p.imagesByColor, route: p.route,
+  tag: p.tag || (i === 0 ? 'THE FIRST DROP' : i === 1 ? 'THE HEAVYWEIGHT' : 'NEW RELEASE'),
   bg: '#e9e5df', photo: true,
 }))
 
@@ -118,6 +119,8 @@ function App() {
   const variantImage = (item) => {
     if (!item.live) return null
     const chosen = sel[item.id]
+    const localByColour = chosen?.Color && item.imagesByColor?.[chosen.Color]
+    if (localByColour) return localByColour
     const byColour = chosen && item.variants.find((v) => v.image?.url && v.selectedOptions.every((o) => o.name !== 'Color' || chosen[o.name] === o.value))
     return cdnImage((matchedVariant(item)?.image?.url) || byColour?.image?.url)
   }
@@ -149,12 +152,14 @@ function App() {
   const shopItems = liveProducts && liveProducts.length
     ? liveProducts.map((p, i) => {
         const variants = p.variants.nodes.filter((v) => v.selectedOptions)
+        const fact = products.find((item) => item.handle === p.handle)
         return {
           id: p.handle, name: p.title, edition: 'BONGHOLEO',
           copy: trim(p.description, 150),
           price: formatPrice(p.priceRange.minVariantPrice),
-          image: cdnImage(p.featuredImage?.url) || '/media/brand/bongholeo-logo.webp',
-          tag: /hoodie/i.test(p.title) ? 'WORN AT THE PODIUM' : 'AS SEEN ON KIMMEL', bg: shopBg[i % shopBg.length],
+          image: cdnImage(p.featuredImage?.url) || fact?.image || '/media/brand/bongholeo-logo.webp',
+          imagesByColor: fact?.imagesByColor, route: fact?.route,
+          tag: fact?.tag || (/hoodie/i.test(p.title) ? 'WORN AT THE PODIUM' : 'AS SEEN ON KIMMEL'), bg: shopBg[i % shopBg.length],
           live: true, variants,
           optionNames: variants[0] ? variants[0].selectedOptions.map((o) => o.name) : [],
         }
@@ -210,7 +215,7 @@ function App() {
     <section className="merch" id="shop" aria-labelledby="merch-title">
       <div className="merch-head"><div className="rv"><div className="section-tag">03 / THE MERCH TABLE</div><h2 id="merch-title">MERCH FOR<br /><em>THE PEOPLE.</em></h2></div><p className="rv" style={{ '--rd': '140ms' }}>{shopConfigured ? 'You just watched him sing at a New Jersey town hall in a giant purple bong — the clip TMZ, Jimmy Kimmel and USA Today all ran. This is the exact crest he wore to the podium. Wear the thing that went viral — pick your size and check out below.' : 'The first drop is the Bongholeo crest — no spin, only truth, worn loud. The shop opens soon.'}</p></div>
       {shopConfigured && <div className="merch-proof rv"><span>The costume from the clip — now on a shirt.</span><div className="merch-proof-logos"><b>TMZ</b><i>◆</i><b>JIMMY KIMMEL</b><i>◆</i><b>USA TODAY</b><i>◆</i><b>STEREOGUM</b></div></div>}
-      <div className="merch-grid">{shopItems.map((item, mi) => <article className="merch-card rv" style={{ '--rd': `${mi * 120}ms` }} key={item.id}><div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">COMING SOON</span>}</div><div className="merch-meta"><span>{item.edition}</span><span>{item.price}</span></div><h3>{item.name}</h3><p>{item.copy}</p>{item.live && <div className="merch-selects">{item.optionNames.map((name) => <label className="merch-select" key={name}><span>{name.toUpperCase()}</span><select value={sel[item.id]?.[name] || ''} onChange={(e) => setSel({ ...sel, [item.id]: { ...sel[item.id], [name]: e.target.value } })}>{optionValues(item, name).map((v) => <option key={v} value={v}>{v}</option>)}</select></label>)}</div>}{item.live && <button className="merch-add" type="button" disabled={!matchedVariant(item) || buying === item.id} onClick={() => { const mv = matchedVariant(item); if (mv) buy(mv.id, item.id) }}>{!matchedVariant(item) ? 'UNAVAILABLE' : buying === item.id ? 'OPENING CHECKOUT…' : `ADD TO CART · ${item.price}`}</button>}{item.live && <span className="merch-secure">Secure Shopify checkout, hosted by our fulfillment partner · printed &amp; shipped to order</span>}</article>)}</div>
+      <div className="merch-grid">{shopItems.map((item, mi) => <article className="merch-card rv" style={{ '--rd': `${mi * 120}ms` }} key={item.id}>{item.route ? <a href={item.route} className="merch-image-link" aria-label={`View ${item.name}`}><div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">COMING SOON</span>}</div></a> : <div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">COMING SOON</span>}</div>}<div className="merch-meta"><span>{item.edition}</span><span>{item.price}</span></div><h3>{item.route ? <a href={item.route}>{item.name}</a> : item.name}</h3><p>{item.copy}</p>{item.route && <a className="merch-details" href={item.route}>VIEW DETAILS <Arrow /></a>}{item.live && <div className="merch-selects">{item.optionNames.map((name) => <label className="merch-select" key={name}><span>{name.toUpperCase()}</span><select value={sel[item.id]?.[name] || ''} onChange={(e) => setSel({ ...sel, [item.id]: { ...sel[item.id], [name]: e.target.value } })}>{optionValues(item, name).map((v) => <option key={v} value={v}>{v}</option>)}</select></label>)}</div>}{item.live && <button className="merch-add" type="button" disabled={!matchedVariant(item) || buying === item.id} onClick={() => { const mv = matchedVariant(item); if (mv) buy(mv.id, item.id) }}>{!matchedVariant(item) ? 'UNAVAILABLE' : buying === item.id ? 'OPENING CHECKOUT…' : `ADD TO CART · ${item.price}`}</button>}{item.live && <span className="merch-secure">Secure Shopify checkout, hosted by our fulfillment partner · printed &amp; shipped to order</span>}</article>)}</div>
       {shopConfigured && <div className="merch-trust">PRINTED TO ORDER · SECURE SHOPIFY CHECKOUT · HEAVYWEIGHT RING-SPUN COTTON</div>}
       {shopConfigured && <div className="merch-offer"><b>15% OFF</b> THE FIRST DROP — APPLIED AUTOMATICALLY AT CHECKOUT, NO CODE NEEDED</div>}
       <div className="merch-cta"><p>{shopConfigured ? 'The drop is live — wear the thing that went viral.' : 'Be first when the drop lands.'}</p>{shopConfigured ? <button className="merch-button" type="button" onClick={() => { track('merch_cta_shop'); scrollToEl('.merch-add', 180, 'shop') }}>GRAB THE CREST <Arrow /></button> : <a className="merch-button" href="https://www.instagram.com/bongholeo/" target="_blank" rel="noreferrer">FOLLOW @BONGHOLEO FOR THE DROP <Arrow /></a>}</div>

@@ -57,6 +57,26 @@ export async function fetchProducts(handle = shopCollection) {
   return data?.collection?.products?.nodes ?? []
 }
 
+// Fetch one exact product for its canonical detail route. Using a handle keeps
+// the public route independent of Shopify's numeric IDs while still making the
+// live variant IDs the source of truth for checkout.
+export async function fetchProduct(handle) {
+  const data = await storefront(
+    `query ($handle: String!) {
+      product(handle: $handle) {
+        id title handle description
+        featuredImage { url altText }
+        priceRange { minVariantPrice { amount currencyCode } }
+        variants(first: 30) {
+          nodes { id title availableForSale price { amount currencyCode } selectedOptions { name value } image { url altText } }
+        }
+      }
+    }`,
+    { handle },
+  )
+  return data?.product ?? null
+}
+
 // Create a cart from line items and return the Shopify-hosted checkout URL.
 export async function createCheckout(lines) {
   const data = await storefront(

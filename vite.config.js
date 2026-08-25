@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         cranford: resolve(import.meta.dirname, 'cranford-july-7-2026.html'),
+        inCuffsTee: resolve(import.meta.dirname, 'products/bongholeo-in-cuffs-tee.html'),
       },
     },
   },

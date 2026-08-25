@@ -102,11 +102,12 @@ const graph = [
   {
     '@type': 'ItemList',
     '@id': `${site.url}/#merch`,
-    name: 'Bongholeo Merch — Gavels The Truth drop',
+    name: 'Official Bongholeo Merch',
     url: `${site.url}/#shop`,
     itemListElement: products.map((p, i) => ({
       '@type': 'Product',
       position: i + 1,
+      '@id': `${site.url}${p.route || `/#shop`}`,
       name: p.name,
       description: p.description,
       image: `${site.url}${p.image}`,
@@ -116,7 +117,7 @@ const graph = [
         price: p.price,
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
-        url: `${site.url}/#shop`,
+        url: `${site.url}${p.route || `/#shop`}`,
       },
     })),
   },
@@ -238,6 +239,7 @@ const newestHome = [appearances[0]?.date, press[0]?.dateISO].filter(Boolean).sor
 const urls = [
   { loc: `${site.url}/`, lastmod: newestHome, priority: '1.0', changefreq: 'weekly' },
   { loc: `${site.url}/cranford-july-7-2026`, lastmod: cranfordUpdated, priority: '0.8', changefreq: 'monthly' },
+  ...products.filter((p) => p.route).map((p) => ({ loc: `${site.url}${p.route}`, lastmod: p.lastmod || today, priority: '0.8', changefreq: 'monthly' })),
 ]
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
