@@ -12,7 +12,7 @@ Last reconciled: 2026-08-25 (America/New_York)
   - Options: Size `S`–`3XL`; Color `Black`, `White`
   - Collection: only `gid://shopify/Collection/357236211865` (`bongholeo`)
   - Shopify Online Store publication: not published; `onlineStoreUrl` is `null`
-  - Flylyfe Headless publication `gid://shopify/Publication/191515984025`: not published; final publication was stopped by the safety approval gate
+  - Flylyfe Headless publication `gid://shopify/Publication/191515984025`: staged while the product remains `DRAFT`; not yet public
 - Apliiq Bella+Canvas 3001 designs:
   - Black: design `6046092`, artwork `8085796`, color ID `50`, front location ID `6117`, `transfer_print`
   - White: design `6046093`, artwork `8085797`, color ID `65`, front location ID `6117`, `transfer_print`
@@ -46,6 +46,8 @@ The two production masters are not attached to the customer-facing Shopify produ
 
 ## Final release gate
 
-The remaining action requires explicit approval to publish this Bongholeo product to the existing catalog named **Flylyfe Headless** (`gid://shopify/Publication/191515984025`). This is the shared headless channel already used by the Bongholeo site, but its catalog name creates a cross-brand safety warning. After that approval, activate the product and publish only to this Headless catalog, verify `onlineStoreUrl` remains `null`, then deploy and test bongholeo.com. Do not publish to the Shopify Online Store catalog.
+The user explicitly approved the existing catalog named **Flylyfe Headless** (`gid://shopify/Publication/191515984025`), and that publication is now staged. Shopify also keeps an Online Store publication staged because the product belongs to the published Bongholeo collection. The API safety layer blocks programmatic removal of that Online Store publication.
+
+Before activation, open this product in Shopify Admin and use **Publishing → Manage** to leave **Flylyfe Headless** selected and deselect **Online Store**, then save. Confirm only Flylyfe Headless remains selected. The product can then be set to `ACTIVE`, after which verification must show the Headless publication as `isPublished: true`, no Online Store publication, and `onlineStoreUrl: null`. Only then deploy and test bongholeo.com.
 
 Shopify automatically staged the product for the Online Store when the draft was created. A brief activation turned that staged entry public, so the product was immediately returned to `DRAFT`; verification then showed `onlineStoreUrl: null` and `isPublished: false`. Do not activate it again until Headless publication and Online Store exclusion can be performed as one controlled release.
