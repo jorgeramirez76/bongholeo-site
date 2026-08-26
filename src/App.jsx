@@ -11,6 +11,7 @@ const merch = products.map((p, i) => ({
   tag: p.tag || (i === 0 ? 'THE FIRST DROP' : i === 1 ? 'THE HEAVYWEIGHT' : 'NEW RELEASE'),
   bg: '#e9e5df', photo: true,
 }))
+const enabledProductHandles = new Set(products.map((product) => product.handle))
 
 // Shopify's CDN resizes on request; without a width it ships the raw upload.
 const cdnImage = (url, width = 800) => (url ? `${url}${url.includes('?') ? '&' : '?'}width=${width}` : url)
@@ -149,8 +150,9 @@ function App() {
   }
 
   const shopBg = ['#0d0912', '#2b0d3a', '#f3ead4']
-  const shopItems = liveProducts && liveProducts.length
-    ? liveProducts.map((p, i) => {
+  const scopedLiveProducts = liveProducts?.filter((product) => enabledProductHandles.has(product.handle))
+  const shopItems = scopedLiveProducts && scopedLiveProducts.length
+    ? scopedLiveProducts.map((p, i) => {
         const variants = p.variants.nodes.filter((v) => v.selectedOptions)
         const fact = products.find((item) => item.handle === p.handle)
         return {

@@ -298,6 +298,23 @@ export const products = [
     price: '39.99',
     colors: ['Black', 'White'],
     sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    defaultSelection: { Size: 'M', Color: 'Black' },
+    page: {
+      kicker: 'BONGHOLEO · NEW RELEASE',
+      title: 'Bongholeo',
+      emphasis: 'In Cuffs Tee.',
+      lead: 'An illustrated Bongholeo scene built for the public record: the purple waterpipe, the baby seat, the cuffs, and the officers—printed oversized across the front.',
+      features: [
+        'Bella+Canvas 3001 unisex retail-fit tee',
+        'Soft ring-spun cotton',
+        'Jumbo full-color front transfer, scaled for garment size',
+        'Printed to order in the USA',
+      ],
+      storyLabel: 'THE ARTWORK',
+      storyTitle: 'Satire under',
+      storyEmphasis: 'custody.',
+      story: 'The illustration is fictional civic satire; it does not claim Bongholeo was arrested at the July 7, 2026 Cranford meeting. He was not.',
+    },
     lastmod: '2026-08-25',
   },
 ]

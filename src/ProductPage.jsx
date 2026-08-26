@@ -4,15 +4,16 @@ import { createCheckout, fetchProduct, formatPrice, shopConfigured } from './sho
 import { products } from './facts.js'
 import './product.css'
 
-const HANDLE = 'bongholeo-in-cuffs-tee'
+const HANDLE = document.body.dataset.productHandle || 'bongholeo-in-cuffs-tee'
 const facts = products.find((product) => product.handle === HANDLE)
 const SIZE_ORDER = ['S', 'M', 'L', 'XL', '2XL', '3XL']
+const defaultSelection = facts.defaultSelection || { Size: 'M', Color: facts.colors?.[0] || 'Black' }
 
 const Arrow = () => <svg className="arrow" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 14 14 4M6 4h8v8" /></svg>
 
 export default function ProductPage() {
   const [product, setProduct] = useState(null)
-  const [selection, setSelection] = useState({ Size: 'M', Color: 'Black' })
+  const [selection, setSelection] = useState(defaultSelection)
   const [activeImage, setActiveImage] = useState(facts.gallery[0])
   const [buying, setBuying] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -23,7 +24,7 @@ export default function ProductPage() {
       .then((live) => {
         setProduct(live)
         const variants = live?.variants?.nodes || []
-        const preferred = variants.find((variant) => variant.availableForSale && variant.selectedOptions.every((option) => ({ Size: 'M', Color: 'Black' })[option.name] === option.value))
+        const preferred = variants.find((variant) => variant.availableForSale && variant.selectedOptions.every((option) => defaultSelection[option.name] === option.value))
         const first = preferred || variants.find((variant) => variant.availableForSale) || variants[0]
         if (first) setSelection(Object.fromEntries(first.selectedOptions.map((option) => [option.name, option.value])))
       })
@@ -80,16 +81,11 @@ export default function ProductPage() {
       </div>
 
       <div className="product-copy">
-        <span className="product-kicker">BONGHOLEO · NEW RELEASE</span>
-        <h1 id="product-title">Bongholeo<br /><em>In Cuffs Tee.</em></h1>
+        <span className="product-kicker">{facts.page.kicker}</span>
+        <h1 id="product-title">{facts.page.title}<br /><em>{facts.page.emphasis}</em></h1>
         <p className="product-price">{price}</p>
-        <p className="product-lead">An illustrated Bongholeo scene built for the public record: the purple waterpipe, the baby seat, the cuffs, and the officers—printed oversized across the front.</p>
-        <ul>
-          <li>Bella+Canvas 3001 unisex retail-fit tee</li>
-          <li>Soft ring-spun cotton</li>
-          <li>Jumbo full-color front transfer, scaled for garment size</li>
-          <li>Printed to order in the USA</li>
-        </ul>
+        <p className="product-lead">{facts.page.lead}</p>
+        <ul>{facts.page.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
 
         <div className="product-options">
           {optionNames.map((name) => <label key={name}><span>{name.toUpperCase()}</span><select value={selection[name] || ''} onChange={(event) => setSelection({ ...selection, [name]: event.target.value })}>{optionValues(name).map((value) => <option key={value} value={value}>{value}</option>)}</select></label>)}
@@ -101,9 +97,9 @@ export default function ProductPage() {
     </section>
 
     <section className="product-story" aria-labelledby="product-story-title">
-      <span>THE ARTWORK</span>
-      <h2 id="product-story-title">Satire under <em>custody.</em></h2>
-      <p>The illustration is fictional civic satire; it does not claim Bongholeo was arrested at the July 7, 2026 Cranford meeting. He was not.</p>
+      <span>{facts.page.storyLabel}</span>
+      <h2 id="product-story-title">{facts.page.storyTitle} <em>{facts.page.storyEmphasis}</em></h2>
+      <p>{facts.page.story}</p>
     </section>
   </main>
 }
