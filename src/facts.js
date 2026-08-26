@@ -1,3 +1,6 @@
+import { features } from './product-flags.js'
+import { inCuffsHoodieProduct } from './pending-products.js'
+
 // Single source of truth for every fact the site states.
 //
 // React (App.jsx) renders from here, and scripts/build-shell.mjs generates the
@@ -317,4 +320,5 @@ export const products = [
     },
     lastmod: '2026-08-25',
   },
+  ...(features.inCuffsHoodie ? [inCuffsHoodieProduct] : []),
 ]
