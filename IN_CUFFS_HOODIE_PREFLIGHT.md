@@ -2,6 +2,9 @@
 
 Last reconciled: 2026-08-25 (America/New_York)
 
+> Historical preflight record. The product launched after these gates passed.
+> See `IN_CUFFS_HOODIE_ROLLBACK.md` for the verified live state and rollback.
+
 ## Safe staged state
 
 - No Shopify product, variants, publication, collection membership, or Apliiq design was created in this phase.
