@@ -10,6 +10,18 @@ Last reconciled: 2026-08-25 (America/New_York)
 - The pending Merch/page facts live in the deliberately unreferenced `src/pending-products.js`; they are absent even from the built JavaScript until final release inputs are verified.
 - The live Shopify collection is additionally filtered through the source-controlled enabled product handles. A future Shopify record cannot appear in the Bongholeo Merch grid until this feature is deliberately enabled and deployed.
 
+## Final customer media
+
+- Male lifestyle source: `/Users/teddy/Documents/Codex/2026-08-24/realtime-voice-chat-3/outputs/bongholeo-in-cuffs-black-hoodie-male-model.png`
+- Female lifestyle source: `/Users/teddy/Documents/Codex/2026-08-24/realtime-voice-chat-3/outputs/bongholeo-in-cuffs-black-hoodie-female-model-jeans.png`
+- Storefront male WebP: `public/media/merch/bongholeo-in-cuffs-hoodie-black-male.webp` (1024 × 1536)
+- Storefront female WebP: `public/media/merch/bongholeo-in-cuffs-hoodie-black-female.webp` (1024 × 1536)
+- Shopify-hosted male lifestyle: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-black-hoodie-male.png?v=1787703784`
+- Shopify-hosted female lifestyle: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-black-hoodie-female.png?v=1787703796`
+- Shopify-hosted production master: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-print-hoodie-front-10x15-300dpi.png?v=1787703809`
+
+The two customer images were visually verified as separate photos and the production master remains excluded from the customer gallery.
+
 ## Verified product convention
 
 - Blank: Gildan 18500 Heavy Blend unisex pullover hoodie
@@ -32,10 +44,8 @@ The current Apliiq public page shows $40.75 for a one-off 18500 with one imprint
 
 ## Final inputs and release gates
 
-1. Final local path for the separate dark-blond male black-hoodie lifestyle image.
-2. Final local path for the separate blonde female black-hoodie lifestyle image.
-3. Authenticated Apliiq access sufficient to save the Gildan 18500 Black design and read its exact connected-store production cost.
-4. Final Apliiq design ID, artwork ID, placement ID, mockup, and six generated SKUs.
-5. Final Shopify product and variant IDs after the Apliiq mapping is verified.
+1. Authenticated Apliiq access sufficient to save the Gildan 18500 Black design and read its exact connected-store production cost.
+2. Final Apliiq design ID, artwork ID, placement ID, mockup, and six generated SKUs.
+3. Final Shopify product and variant IDs after the Apliiq mapping is verified.
 
 Before enabling `features.inCuffsHoodie`, add the two final WebP images, import `inCuffsHoodieProduct` from `src/pending-products.js` into the active `products` list, replace the route's noindex preflight state with validated OG/Twitter media and Product JSON-LD, verify the exact Shopify handle `bongholeo-in-cuffs-hoodie`, and confirm Headless-only publication.

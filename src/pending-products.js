@@ -1,5 +1,5 @@
 // Staged release facts. This module is intentionally unreferenced while the
-// hoodie awaits its final lifestyle media and verified Apliiq/Shopify records.
+// hoodie awaits verified Apliiq/Shopify records and Headless-only publication.
 // At launch, add this object to the active products list only after every
 // release gate in IN_CUFFS_HOODIE_PREFLIGHT.md passes.
 export const inCuffsHoodieProduct = {
