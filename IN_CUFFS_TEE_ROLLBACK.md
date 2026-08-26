@@ -1,18 +1,25 @@
 # Bongholeo In Cuffs Tee — launch and rollback handoff
 
-Last reconciled: 2026-08-25 (America/New_York)
+Last reconciled: 2026-08-25 20:08 EDT (America/New_York)
 
 ## Current state
 
-- Local site slice is complete and passes `npm run lint`, `npm run build`, and the static canonical/schema/sitemap verification.
+- Site slice is live at `https://bongholeo.com/products/bongholeo-in-cuffs-tee` from source commit `0ae7491` (handoff commit `7b68b02`).
+- GitHub `origin/main` contains both release commits.
+- Vercel production deployment: `dpl_Fm7BP4FekGbY6PPdbhPhNaVbRgbr`
+  - Deployment URL: `https://bongholeo-site-g34e0jabr-jorge-ramirezs-projects-612f8185.vercel.app`
+  - Production aliases: `https://bongholeo.com`, `https://www.bongholeo.com`, and `https://bongholeo-site.vercel.app`
+  - Prior stable deployment for immediate rollback: `dpl_AxHk6veRPosUmo1dMcwEno33viaa` (`https://bongholeo-site-6khx5xnvd-jorge-ramirezs-projects-612f8185.vercel.app`)
+- Release checks passed: `npm run lint`, `npm run build`, static canonical/schema/sitemap checks, and `npm audit --omit=dev` (0 vulnerabilities).
 - Shopify product: `gid://shopify/Product/8934012289177`
   - Handle: `bongholeo-in-cuffs-tee`
-  - Status: `DRAFT` (kept non-public while the final publication approval is blocked)
+  - Status: `ACTIVE`
   - Price: `$39.99` on all 12 variants
   - Options: Size `S`–`3XL`; Color `Black`, `White`
   - Collection: only `gid://shopify/Collection/357236211865` (`bongholeo`)
-  - Shopify Online Store publication: not published; `onlineStoreUrl` is `null`
-  - Flylyfe Headless publication `gid://shopify/Publication/191515984025`: staged while the product remains `DRAFT`; not yet public
+  - Shopify Online Store publication `gid://shopify/Publication/187706474649`: not selected and not published; `onlineStoreUrl` is `null`; `publishedAt` is `null`
+  - Flylyfe Headless publication `gid://shopify/Publication/191515984025`: selected and published (`publishDate` `2026-08-26T00:02:27Z`)
+  - Publication was re-opened and visually verified in Shopify Admin after activation: Online Store unchecked, Flylyfe Headless checked
 - Apliiq Bella+Canvas 3001 designs:
   - Black: design `6046092`, artwork `8085796`, color ID `50`, front location ID `6117`, `transfer_print`
   - White: design `6046093`, artwork `8085797`, color ID `65`, front location ID `6117`, `transfer_print`
@@ -36,18 +43,26 @@ Last reconciled: 2026-08-25 (America/New_York)
 
 The two production masters are not attached to the customer-facing Shopify product media.
 
+## Live verification
+
+- Desktop and 390px mobile layouts were visually checked; no clipping or overlap was found.
+- The gallery exposes four separate lifestyle photographs: black male, black female, white male, and white female. Production masters are not customer media.
+- Black/White color selection changes the lead media correctly; size selection exposes `S`, `M`, `L`, `XL`, `2XL`, and `3XL`.
+- A live `M / Black` cart was created and handed to Shopify checkout successfully. No order was submitted.
+- Canonical URL, Product JSON-LD (`$39.99 USD`, four images), Bongholeo Merch entry, and Bongholeo sitemap entry are live.
+- Shopify reports exactly one collection (`bongholeo`) and exactly one published catalog (Flylyfe Headless).
+- Shopify variant SKUs match Apliiq designs `6046092` and `6046093` for every Black/White size.
+- Fly Lyfe exclusion was checked on `www.flylyfe.com`: homepage, Product schema, sitemap, and ten public collection routes contain neither the title nor handle. `shop.flylyfe.com/products/bongholeo-in-cuffs-tee` resolves to the Flylyfe homepage rather than exposing a product page.
+
 ## Rollback
 
-1. Set Shopify product `gid://shopify/Product/8934012289177` to `DRAFT`.
-2. Remove it from the `bongholeo` collection if an entirely clean admin rollback is required. Do not delete it; keeping the product preserves variant IDs and Apliiq SKUs.
-3. Do not publish it to either Shopify publication. If it was later published, unpublish only this product from the affected publication.
-4. Revert the site commit that introduces `/products/bongholeo-in-cuffs-tee`, the four local WebP files, the Merch entry, schema, and sitemap entry.
-5. Leave Apliiq designs `6046092` and `6046093` in place unless the account owner explicitly requests archival; existing product/SKU mappings must never be repointed.
+1. In Shopify Admin, set product `gid://shopify/Product/8934012289177` to `DRAFT` first. Verify `onlineStoreUrl` remains `null` and both publication checks report not published.
+2. For a complete catalog rollback, open **Publishing → Manage**, keep **Online Store** unchecked, uncheck **Flylyfe Headless**, and save. Do not delete the product; keeping it preserves all variant IDs and Apliiq SKUs.
+3. Restore the immediately preceding Bongholeo deployment with `npx vercel promote dpl_AxHk6veRPosUmo1dMcwEno33viaa`. Re-check `https://bongholeo.com` after promotion.
+4. For a source-level rollback, create a normal revert of runtime commit `0ae7491` and push that revert to `origin/main`; do not reset shared history. The handoff-only commit `7b68b02` does not affect the runtime.
+5. Remove the product from collection `gid://shopify/Collection/357236211865` only if a completely clean Admin rollback is required.
+6. Leave Apliiq designs `6046092` and `6046093` in place unless the account owner explicitly requests archival; never repoint existing product or variant mappings.
 
-## Final release gate
+## Release invariant
 
-The user explicitly approved the existing catalog named **Flylyfe Headless** (`gid://shopify/Publication/191515984025`), and that publication is now staged. Shopify also keeps an Online Store publication staged because the product belongs to the published Bongholeo collection. The API safety layer blocks programmatic removal of that Online Store publication.
-
-Before activation, open this product in Shopify Admin and use **Publishing → Manage** to leave **Flylyfe Headless** selected and deselect **Online Store**, then save. Confirm only Flylyfe Headless remains selected. The product can then be set to `ACTIVE`, after which verification must show the Headless publication as `isPublished: true`, no Online Store publication, and `onlineStoreUrl: null`. Only then deploy and test bongholeo.com.
-
-Shopify automatically staged the product for the Online Store when the draft was created. A brief activation turned that staged entry public, so the product was immediately returned to `DRAFT`; verification then showed `onlineStoreUrl: null` and `isPublished: false`. Do not activate it again until Headless publication and Online Store exclusion can be performed as one controlled release.
+The product must remain published only to **Flylyfe Headless**. If Shopify ever selects or publishes **Online Store**, return the product to `DRAFT` immediately, remove Online Store in **Publishing → Manage**, and re-verify the Admin API state before reactivation.
