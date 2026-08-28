@@ -107,7 +107,9 @@ const graph = [
     itemListElement: products.map((p, i) => ({
       '@type': 'Product',
       position: i + 1,
-      '@id': `${site.url}${p.route || `/#shop`}`,
+      // Every Product needs its own entity ID. Reusing #shop causes JSON-LD
+      // processors to merge separate products and report duplicate fields.
+      '@id': `${site.url}${p.route || `/#product-${p.handle}`}`,
       name: p.name,
       description: p.description,
       image: `${site.url}${p.image}`,
@@ -132,6 +134,14 @@ const graph = [
     })),
   },
 ]
+
+const productIds = graph
+  .flatMap((node) => node['@type'] === 'ItemList' ? node.itemListElement : [])
+  .map((product) => product['@id'])
+
+if (new Set(productIds).size !== productIds.length) {
+  throw new Error('Merchant schema contains duplicate Product @id values')
+}
 
 const ld = `    <script type="application/ld+json">
 ${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }, null, 2)
