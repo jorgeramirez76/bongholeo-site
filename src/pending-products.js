@@ -36,5 +36,5 @@ export const inCuffsHoodieProduct = {
     storyEmphasis: 'custody.',
     story: 'The illustration is fictional civic satire; it does not claim Bongholeo was arrested at the July 7, 2026 Cranford meeting. He was not.',
   },
-  lastmod: '2026-08-25',
+  lastmod: '2026-09-11',
 }

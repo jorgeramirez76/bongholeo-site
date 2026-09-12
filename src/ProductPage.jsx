@@ -101,5 +101,10 @@ export default function ProductPage() {
       <h2 id="product-story-title">{facts.page.storyTitle} <em>{facts.page.storyEmphasis}</em></h2>
       <p>{facts.page.story}</p>
     </section>
+    <section className="product-story" aria-labelledby="related-merch-title">
+      <h2 id="related-merch-title">More official Bongholeo merch</h2>
+      <ul>{products.filter((item) => item.route && item.handle !== HANDLE).map((item) => <li key={item.handle}><a href={item.route}>{item.name}</a></li>)}</ul>
+      <p><a href="/#shop">All official Bongholeo merch</a></p>
+    </section>
   </main>
 }

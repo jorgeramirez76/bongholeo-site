@@ -30,3 +30,4 @@ dist-ssr
 
 # Internal strategy notes — kept local, not published to the public repo
 docs/
+.env*

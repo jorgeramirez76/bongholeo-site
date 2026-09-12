@@ -275,6 +275,44 @@ writeFileSync(file('index.html'), html)
 writeFileSync(file('public/llms.txt'), llms)
 writeFileSync(file('public/sitemap.xml'), sitemap)
 
+// Product facts must be available in the initial document as well as after
+// React loads. Use the same facts as ProductPage; checkout still gets live
+// prices and available variants from Shopify.
+for (const product of products.filter((p) => p.route && p.page)) {
+  const url = `${site.url}${product.route}`
+  const related = products.filter((p) => p.route && p.route !== product.route)
+  const shell = `<div id="root">
+      <main style="background:#f3ead4;color:#111;min-height:100vh;padding:56px 7vw;font-family:Arial,sans-serif;max-width:1100px;margin:auto">
+        <nav aria-label="Breadcrumb"><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a> / ${esc(product.name)}</nav>
+        <h1>${esc(product.name)}</h1>
+        <p>${esc(product.page.lead)}</p>
+        <img src="${esc(product.gallery[0].src)}" alt="${esc(product.gallery[0].alt)}" width="1024" height="1536" style="max-width:340px;width:100%;height:auto" />
+        <p>$${esc(product.price)} USD. Select a size and color for live availability and checkout.</p>
+        <h2>Product details</h2>
+        <ul>${product.page.features.map((feature) => `<li>${esc(feature)}</li>`).join('')}</ul>
+        <p>Colors: ${product.colors.map(esc).join(', ')}. Sizes: ${product.sizes.map(esc).join(', ')}.</p>
+        <h2>${esc(product.page.storyTitle)} ${esc(product.page.storyEmphasis)}</h2>
+        <p>${esc(product.page.story)}</p>
+        <p>Secure Shopify checkout · produced and fulfilled through Apliiq.</p>
+        <h2>More official Bongholeo merch</h2>
+        <ul>${related.map((p) => `<li><a href="${esc(p.route)}">${esc(p.name)}</a></li>`).join('')}</ul>
+        <p><a href="/#shop">All official Bongholeo merch</a></p>
+      </main>
+    </div>`
+  const breadcrumbs = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Bongholeo', item: `${site.url}/` },
+      { '@type': 'ListItem', position: 2, name: product.name, item: url },
+    ],
+  }
+  const path = file(`${product.route.slice(1)}.html`)
+  let source = readFileSync(path, 'utf8').replace(/<div id="root">[\s\S]*?<\/div>/, shell)
+  source = source.replace(/\s*<script id="product-breadcrumbs" type="application\/ld\+json">[\s\S]*?<\/script>/, '')
+  source = source.replace('</head>', `  <script id="product-breadcrumbs" type="application/ld+json">${JSON.stringify(breadcrumbs)}</script>\n  </head>`)
+  writeFileSync(path, source)
+}
+
 // Fail the build rather than ship an invalid graph.
 JSON.parse(ld.slice(ld.indexOf('{'), ld.lastIndexOf('}') + 1))
 
