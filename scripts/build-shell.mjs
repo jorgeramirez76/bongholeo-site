@@ -66,7 +66,8 @@ const graph = [
     name: 'Bongholeo — Local Government Works for the People',
     isPartOf: { '@id': `${site.url}/#website` },
     mainEntity: { '@id': `${site.url}/#person` },
-    dateModified: today,
+    // Omit this optional DateTime until an actual profile-edit timestamp is
+    // recorded. A build-day date is neither a DateTime nor a profile update.
   },
   {
     '@type': 'Person',
