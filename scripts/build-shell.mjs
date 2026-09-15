@@ -13,6 +13,9 @@ const file = (p) => new URL(p, root)
 const today = new Date().toISOString().slice(0, 10)
 // The event page is a fixed historical account; bump this only when it is edited.
 const cranfordUpdated = '2026-08-19'
+// Update when the homepage copy or navigation changes, never just on a build.
+const homeUpdated = '2026-09-15'
+const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map((p) => p.dateISO), ...products.map((p) => p.lastmod)].filter(Boolean).sort().pop()
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -185,7 +188,7 @@ const staticBlock = [
   '      </ul>',
   h2('Official merch'),
   '      <ul>',
-  ...products.map((p) => `        <li>${esc(p.name)} — $${esc(p.price)}</li>`),
+  ...products.map((p) => `        <li>${p.route ? link(p.route, p.name) : esc(p.name)} — $${esc(p.price)}</li>`),
   '      </ul>',
   `      <p>Press, bookings and public-comment invitations: ${link(`mailto:${site.email}`, site.email)}</p>`,
 ].join('\n')
@@ -211,7 +214,7 @@ Local government exists to serve and represent community residents. Bongholeo ca
 - Recurring subjects: public-comment rights, Flock Safety automated license-plate readers in Franklin Township, and the $1.8 billion AI data center in Kenilworth
 - Channel: Social Justice Waterpipe (@Bongholeo420) — about ${stats.videos} videos, ~${stats.subscribers.toLocaleString('en-US')} subscribers
 - Contact, press & bookings: ${site.email}
-- Last updated: ${today}
+- Last updated: ${newestHome}
 
 ## Primary sources
 
@@ -244,8 +247,6 @@ ${products.map((p) => `- ${p.name} — $${p.price}, printed to order, sold at ${
 `
 
 /* -------------------------------------------------------------- sitemap ---- */
-
-const newestHome = [appearances[0]?.date, press[0]?.dateISO].filter(Boolean).sort().pop() || today
 
 const urls = [
   { loc: `${site.url}/`, lastmod: newestHome, priority: '1.0', changefreq: 'weekly' },
