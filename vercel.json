@@ -30,5 +30,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/story",
+      "destination": "/#story",
+      "permanent": true
+    },
+    {
+      "source": "/story.html",
+      "destination": "/#story",
+      "permanent": true
+    }
   ]
 }
