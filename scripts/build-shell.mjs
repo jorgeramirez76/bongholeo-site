@@ -14,7 +14,7 @@ const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
 const today = new Date().toISOString().slice(0, 10)
 // The event page is a fixed historical account; bump this only when it is edited.
-const cranfordUpdated = '2026-08-19'
+const cranfordUpdated = '2026-09-30'
 // Update when the homepage copy or navigation changes, never just on a build.
 const homeUpdated = policyUpdated
 const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map((p) => p.dateISO), ...products.map((p) => p.lastmod)].filter(Boolean).sort().pop()
@@ -307,6 +307,7 @@ for (const product of products.filter((p) => p.route && p.page)) {
         <p>Colors: ${product.colors.map(esc).join(', ')}. Sizes: ${product.sizes.map(esc).join(', ')}.</p>
         <h2>${esc(product.page.storyTitle)} ${esc(product.page.storyEmphasis)}</h2>
         <p>${esc(product.page.story)}</p>
+        <p>New to the character? Read the <a href="/cranford-july-7-2026">account of Bongholeo’s July 7 Cranford appearance</a> and watch the meeting footage.</p>
         <p>Secure Shopify checkout · produced and fulfilled through Apliiq.</p>
         <h2>Shipping &amp; returns</h2>
         <p>${esc(policySummary)} <a href="${policyPath}">Full shipping and return policy</a></p>
