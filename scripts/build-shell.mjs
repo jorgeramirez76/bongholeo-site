@@ -8,13 +8,15 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { site, seo, person, stats, videos, press, appearances, faqs, products } from '../src/facts.js'
 
+import { policyUpdated, policyPath, policySections, policySummary, merchantPolicy } from '../src/merch-policy.js'
+
 const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
 const today = new Date().toISOString().slice(0, 10)
 // The event page is a fixed historical account; bump this only when it is edited.
 const cranfordUpdated = '2026-08-19'
 // Update when the homepage copy or navigation changes, never just on a build.
-const homeUpdated = '2026-09-15'
+const homeUpdated = policyUpdated
 const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map((p) => p.dateISO), ...products.map((p) => p.lastmod)].filter(Boolean).sort().pop()
 
 const esc = (s) =>
@@ -122,6 +124,7 @@ const graph = [
         '@type': 'Offer',
         price: p.price,
         priceCurrency: 'USD',
+        ...merchantPolicy(p),
         availability: 'https://schema.org/InStock',
         url: `${site.url}${p.route || `/#shop`}`,
       },
@@ -186,6 +189,8 @@ const staticBlock = [
     (p) => `        <li>${link(p.href, `${p.outlet} — ${p.title}`)} (${esc(p.date)})</li>`
   ),
   '      </ul>',
+  h2('Shipping & returns'),
+  `<p>${esc(policySummary)} ${link(policyPath, 'Full shipping and return policy')}</p>`,
   h2('Official merch'),
   '      <ul>',
   ...products.map((p) => `        <li>${p.route ? link(p.route, p.name) : esc(p.name)} — $${esc(p.price)}</li>`),
@@ -240,6 +245,12 @@ ${faqs.map((f) => `### ${f.q}\n\n${f.a}`).join('\n\n')}
 
 ${products.map((p) => `- ${p.name} — $${p.price}, printed to order, sold at ${site.url}/#shop`).join('\n')}
 
+## Shipping and returns
+
+${policySummary}
+
+Full policy: ${site.url}${policyPath}
+
 ## Corrections
 
 - Bongholeo was not arrested at the July 7, 2026 Cranford Township Committee meeting. A different speaker at that meeting, William Thilly, was arrested and charged; those charges are separate from Bongholeo and are allegations.
@@ -251,7 +262,8 @@ ${products.map((p) => `- ${p.name} — $${p.price}, printed to order, sold at ${
 const urls = [
   { loc: `${site.url}/`, lastmod: newestHome, priority: '1.0', changefreq: 'weekly' },
   { loc: `${site.url}/cranford-july-7-2026`, lastmod: cranfordUpdated, priority: '0.8', changefreq: 'monthly' },
-  ...products.filter((p) => p.route).map((p) => ({ loc: `${site.url}${p.route}`, lastmod: p.lastmod || today, priority: '0.8', changefreq: 'monthly' })),
+  { loc: `${site.url}${policyPath}`, lastmod: policyUpdated, priority: '0.5', changefreq: 'monthly' },
+  ...products.filter((p) => p.route).map((p) => ({ loc: `${site.url}${p.route}`, lastmod: [p.lastmod, policyUpdated].filter(Boolean).sort().pop(), priority: '0.8', changefreq: 'monthly' })),
 ]
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -296,6 +308,8 @@ for (const product of products.filter((p) => p.route && p.page)) {
         <h2>${esc(product.page.storyTitle)} ${esc(product.page.storyEmphasis)}</h2>
         <p>${esc(product.page.story)}</p>
         <p>Secure Shopify checkout · produced and fulfilled through Apliiq.</p>
+        <h2>Shipping &amp; returns</h2>
+        <p>${esc(policySummary)} <a href="${policyPath}">Full shipping and return policy</a></p>
         <h2>More official Bongholeo merch</h2>
         <ul>${related.map((p) => `<li><a href="${esc(p.route)}">${esc(p.name)}</a></li>`).join('')}</ul>
         <p><a href="/#shop">All official Bongholeo merch</a></p>
@@ -312,6 +326,12 @@ for (const product of products.filter((p) => p.route && p.page)) {
   let source = readFileSync(path, 'utf8').replace(/<div id="root">[\s\S]*?<\/div>/, shell)
   source = source.replace(/\s*<script id="product-breadcrumbs" type="application\/ld\+json">[\s\S]*?<\/script>/, '')
   source = source.replace('</head>', `  <script id="product-breadcrumbs" type="application/ld+json">${JSON.stringify(breadcrumbs)}</script>\n  </head>`)
+  source = source.replace(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g, (tag, json) => {
+    const data = JSON.parse(json)
+    if (data['@type'] !== 'Product') return tag
+    Object.assign(data.offers, merchantPolicy(product))
+    return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`
+  })
   writeFileSync(path, source)
 }
 
@@ -322,3 +342,16 @@ const words = staticBlock.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).
 console.log(
   `build-shell: static block ${words} words · ${graph.length} schema nodes · ${appearances.length} appearances · ${press.length} press · ${faqs.length} FAQs · sitemap ${urls.length} URLs · ${today}`
 )
+
+// A standalone, crawlable policy page also works without JavaScript.
+writeFileSync(file('public/shipping-returns.html'), `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shipping &amp; Returns | Bongholeo Official Merch</title>
+<meta name="description" content="Bongholeo merch shipping rates, production and delivery timelines, international destinations, and 30-day returns and exchanges.">
+<link rel="canonical" href="${site.url}${policyPath}"><link rel="icon" href="/favicon.svg">
+<style>body{margin:0;background:#f3ead4;color:#17121d;font-family:Arial,sans-serif;line-height:1.75}main{max-width:780px;margin:auto;padding:40px 24px 72px}a{color:inherit;text-underline-offset:4px}h1{font-size:clamp(2rem,7vw,3.5rem);line-height:1.1}h2{margin-top:36px;font-size:1.4rem}nav{font-weight:bold}footer{border-top:1px solid;margin-top:40px;padding-top:24px}</style></head>
+<body><main><nav><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a></nav>
+<h1>Shipping &amp; returns</h1><p>For all official Bongholeo tees and hoodies. Updated September 30, 2026.</p>
+${policySections.map(section => `<section><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p></section>`).join('\n')}
+<footer>Order questions? <a href="mailto:${site.email}">${site.email}</a><p><a href="/#shop">Back to official merch →</a></p></footer></main></body></html>
+`)

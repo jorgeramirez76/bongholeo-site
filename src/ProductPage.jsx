@@ -1,3 +1,4 @@
+import MerchPolicy from './MerchPolicy.jsx'
 import { useEffect, useState } from 'react'
 import { track } from '@vercel/analytics'
 import { createCheckout, fetchProduct, formatPrice, shopConfigured } from './shop.js'
@@ -96,6 +97,7 @@ export default function ProductPage() {
       </div>
     </section>
 
+    <MerchPolicy />
     <section className="product-story" aria-labelledby="product-story-title">
       <span>{facts.page.storyLabel}</span>
       <h2 id="product-story-title">{facts.page.storyTitle} <em>{facts.page.storyEmphasis}</em></h2>
