@@ -102,6 +102,7 @@ export default function ProductPage() {
       <span>{facts.page.storyLabel}</span>
       <h2 id="product-story-title">{facts.page.storyTitle} <em>{facts.page.storyEmphasis}</em></h2>
       <p>{facts.page.story}</p>
+      <p>New to the character? Read the <a href="/cranford-july-7-2026">account of Bongholeo’s July 7 Cranford appearance</a> and watch the meeting footage.</p>
     </section>
     <section className="product-story" aria-labelledby="related-merch-title">
       <h2 id="related-merch-title">More official Bongholeo merch</h2>
