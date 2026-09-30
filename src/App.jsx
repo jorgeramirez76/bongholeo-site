@@ -1,3 +1,4 @@
+import MerchPolicy from './MerchPolicy.jsx'
 import { useState, useEffect, useRef } from 'react'
 import Lenis from 'lenis'
 import { track } from '@vercel/analytics'
@@ -243,6 +244,7 @@ function App() {
       <div className="contact-grid"><h2 id="contact-title" className="rv" style={{ '--rd': '90ms' }}>SPEAK<br />INTO THE<br /><em>MIC.</em></h2><div className="contact-copy rv" style={{ '--rd': '180ms' }}><p>Press, bookings, tips, public-comment invites — or just to say the public record is open. Reach out directly.</p><a className="contact-email" href="mailto:admin@bongholeo.com">admin@bongholeo.com <Arrow /></a><div className="contact-socials"><a href="https://www.instagram.com/bongholeo/" target="_blank" rel="noreferrer"><span>INSTAGRAM</span><strong>@bongholeo</strong><Arrow /></a><a href="https://www.youtube.com/@Bongholeo420" target="_blank" rel="noreferrer"><span>YOUTUBE</span><strong>Social Justice Waterpipe</strong><Arrow /></a></div></div></div>
     </section>
 
+    <MerchPolicy />
     <div className="footer-echo" aria-hidden="true">BONGHOLEO</div>
     <footer><a className="logo" href="#top"><img className="logo-img" src="/media/brand/bongholeo-logo.webp" alt="Bongholeo — Gavels the Truth" /></a><p>PUBLIC COMMENT / CIVIC SATIRE / NEW JERSEY</p><a className="jrg-link" href="https://thejorgeramirezgroup.com" target="_blank" rel="noreferrer">SITE BY THE JORGE RAMIREZ GROUP <Arrow /></a><a href="#top">TOP ↑</a></footer>
   </main>
