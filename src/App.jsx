@@ -1,6 +1,5 @@
 import MerchPolicy from './MerchPolicy.jsx'
 import { useState, useEffect, useRef } from 'react'
-import Lenis from 'lenis'
 import { track } from '@vercel/analytics'
 import './index.css'
 import { shopConfigured, fetchProducts, createCheckout, formatPrice, failureReason, DISCOUNT_CODE } from './shop.js'
@@ -92,19 +91,31 @@ function App() {
   }, [shopAttempt])
   const retryShop = () => { track('shop_retry'); setShopAttempt((n) => n + 1) }
 
+  // Lenis only smooths mouse-wheel and trackpad scrolling; touch scrolling stays
+  // native. On phones it would cost a download and an every-frame loop for
+  // nothing, so it is loaded only for a fine pointer.
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const lenis = new Lenis({ autoRaf: true, lerp: 0.12 })
-    lenisRef.current = lenis
-    return () => { lenis.destroy(); lenisRef.current = null }
+    if (!window.matchMedia('(pointer: fine)').matches) return
+    let lenis = null
+    let cancelled = false
+    import('lenis')
+      .then(({ default: Lenis }) => {
+        if (cancelled) return
+        lenis = new Lenis({ autoRaf: true, lerp: 0.12 })
+        lenisRef.current = lenis
+      })
+      .catch(() => {})
+    return () => { cancelled = true; lenis?.destroy(); lenisRef.current = null }
   }, [])
 
   const scrollToId = (id) => {
     const el = document.getElementById(id)
     if (!el) return
-    // Lenis forces html scroll-behavior:auto and its own scrollTo is rAF-based, so
-    // native 'smooth' and lenis.scrollTo both no-op here. A synchronous window.scrollTo
-    // lands reliably and Lenis syncs to the new position without fighting it.
+    // When Lenis runs (mouse and trackpad visitors), it forces html
+    // scroll-behavior:auto and its own scrollTo is rAF-based, so native 'smooth'
+    // and lenis.scrollTo both no-op. A synchronous window.scrollTo lands reliably
+    // with or without Lenis, and Lenis syncs to the new position.
     window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 8)
   }
 
