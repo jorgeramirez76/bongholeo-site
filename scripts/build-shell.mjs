@@ -15,7 +15,7 @@ const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
 const today = new Date().toISOString().slice(0, 10)
 // The event page is a fixed historical account; bump this only when it is edited.
-const cranfordUpdated = '2026-09-30'
+const cranfordUpdated = '2026-10-14'
 // Update when the homepage copy or navigation changes, never just on a build.
 const homeUpdated = policyUpdated
 const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map((p) => p.dateISO), ...products.map((p) => p.lastmod)].filter(Boolean).sort().pop()
@@ -199,6 +199,22 @@ const staticBlock = [
   `      <p>Press, bookings and public-comment invitations: ${link(`mailto:${site.email}`, site.email)}</p>`,
 ].join('\n')
 
+/* ------------------------------------------------- event page merch block ---- */
+// Visitors who arrive on the Cranford page (the main search entry) get a way
+// to the merch, with the same "he was not arrested" note the product pages carry.
+
+const routed = products.filter((p) => p.route)
+const unrouted = products.filter((p) => !p.route)
+const names = (list) => list.map((p) => p.name).join(list.length > 2 ? ', ' : ' and ').replace(/, (?=[^,]*$)/, ', and ')
+const cranfordMerch = [
+  '      <h2>Official merch</h2>',
+  '      <ul class="coverage">',
+  ...routed.map((p) => `        <li><a href="${esc(p.route)}"><strong>${esc(p.tag || 'MERCH')}</strong><span>${esc(p.name)}</span><span class="price">$${esc(p.price)}</span></a></li>`),
+  '      </ul>',
+  ...[...new Set(routed.map((p) => p.page?.story).filter(Boolean))].map((story) => `      <p>${esc(story)}</p>`),
+  `      <p>${unrouted.length ? `The ${esc(names(unrouted))} ${unrouted.length > 1 ? 'are' : 'is'} on the ` : 'Every design is on the '}<a href="/#shop">official merch table</a>.</p>`,
+].join('\n')
+
 /* ------------------------------------------------------------- llms.txt ---- */
 
 const llms = `# Bongholeo
@@ -298,6 +314,8 @@ html = between(html, 'STATIC', staticBlock)
 writeFileSync(file('index.html'), html)
 
 // The event page shares the same generated head fragments where it can.
+const cranford = readFileSync(file('cranford-july-7-2026.html'), 'utf8')
+writeFileSync(file('cranford-july-7-2026.html'), between(cranford, 'MERCH', cranfordMerch))
 writeFileSync(file('public/llms.txt'), llms)
 writeFileSync(file('public/sitemap.xml'), sitemap)
 

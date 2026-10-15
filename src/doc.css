@@ -182,7 +182,8 @@ blockquote {
   color: var(--gold);
 }
 
-.coverage time {
+.coverage time,
+.coverage .price {
   font: 400 11px var(--mono);
   color: var(--grey);
 }
