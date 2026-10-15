@@ -25,13 +25,13 @@ The official Bongholeo site: a Vite + React storefront and public-record page. M
 npm ci            # install
 npm run dev       # local dev server
 npm run lint      # oxlint
-npm test          # unit tests (node:test, no network)
-npm run build     # build-shell + vite build into dist/
+npm test          # unit tests (node:test, no network; Node 21 or later)
+npm run build     # build-shell, then the unit tests, then vite build into dist/
 npm run indexnow  # after a deploy: ping IndexNow with every URL in public/sitemap.xml
 npm run merch-sizes # after adding a product photo: make its 320/640 px copies (needs ffmpeg)
 ```
 
-Run `npm run lint`, `npm test` and `npm run build` before pushing to `main`.
+Run `npm run lint` and `npm run build` before pushing to `main`. Vercel's build runs the same `npm run build`, so a failing unit test stops the deploy and the live site stays as it was. The Vercel project uses Node 24.x; the test command's file pattern needs Node 21 or later.
 
 ## Environment variables (Vercel → bongholeo-site → Settings → Environment Variables)
 
