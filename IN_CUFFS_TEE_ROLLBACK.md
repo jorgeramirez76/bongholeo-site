@@ -1,15 +1,16 @@
 # Bongholeo In Cuffs Tee — launch and rollback handoff
 
-Last reconciled: 2026-08-25 20:08 EDT (America/New_York)
+Last reconciled: 2026-08-25 20:08 EDT (America/New_York). Rollback steps updated 2026-10-14.
+
+Deploys: production deploys only by pushing to `main` on GitHub (Vercel project `bongholeo-site` auto-deploys it). Never run `vercel --prod` from a local folder; local copies can be behind `main`.
 
 ## Current state
 
 - Site slice is live at `https://bongholeo.com/products/bongholeo-in-cuffs-tee` from source commit `0ae7491` (handoff commit `7b68b02`).
 - GitHub `origin/main` contains both release commits.
-- Vercel production deployment: `dpl_Fm7BP4FekGbY6PPdbhPhNaVbRgbr`
-  - Deployment URL: `https://bongholeo-site-g34e0jabr-jorge-ramirezs-projects-612f8185.vercel.app`
+- Vercel production deployment at launch (historical; production has been redeployed from `main` many times since): `dpl_Fm7BP4FekGbY6PPdbhPhNaVbRgbr`
   - Production aliases: `https://bongholeo.com`, `https://www.bongholeo.com`, and `https://bongholeo-site.vercel.app`
-  - Prior stable deployment for immediate rollback: `dpl_AxHk6veRPosUmo1dMcwEno33viaa` (`https://bongholeo-site-6khx5xnvd-jorge-ramirezs-projects-612f8185.vercel.app`)
+  - Do not promote the pre-launch deployment `dpl_AxHk6veRPosUmo1dMcwEno33viaa` (2026-08-20): it predates both In Cuffs products and the `/shipping-returns` page that every Product JSON-LD links to.
 - Release checks passed: `npm run lint`, `npm run build`, static canonical/schema/sitemap checks, and `npm audit --omit=dev` (0 vulnerabilities).
 - Shopify product: `gid://shopify/Product/8934012289177`
   - Handle: `bongholeo-in-cuffs-tee`
@@ -36,12 +37,10 @@ Last reconciled: 2026-08-25 20:08 EDT (America/New_York)
   - `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-white-male.png?v=1787696687`
 - White female lifestyle — `gid://shopify/MediaImage/37265292263577`
   - `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-white-female.png?v=1787696694`
-- Approved black-garment smoke production master — `gid://shopify/MediaImage/37265754063001`
-  - `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-print-black-smoke-12.67x19-300dpi.png?v=1787701715`
-- White-garment production master — `gid://shopify/MediaImage/37265292361881`
-  - `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-print-white-12.67x19-300dpi.png?v=1787696705`
+- Approved black-garment smoke production master (300 dpi) — `gid://shopify/MediaImage/37265754063001`
+- White-garment production master (300 dpi) — `gid://shopify/MediaImage/37265292361881`
 
-The two production masters are not attached to the customer-facing Shopify product media.
+The two production masters are not attached to the customer-facing Shopify product media. Their file URLs are deliberately not listed here: Shopify Files are public to anyone with the URL, and this repository is public. Once Apliiq is confirmed to hold its own copy of the artwork and a private backup exists, delete both masters in Shopify Admin → Content → Files, and keep future production masters out of Shopify Files.
 
 ## Live verification
 
@@ -56,9 +55,9 @@ The two production masters are not attached to the customer-facing Shopify produ
 
 ## Rollback
 
-1. In Shopify Admin, set product `gid://shopify/Product/8934012289177` to `DRAFT` first. Verify `onlineStoreUrl` remains `null` and both publication checks report not published.
+1. In Shopify Admin, set product `gid://shopify/Product/8934012289177` to `DRAFT` first. Verify `onlineStoreUrl` remains `null` and both publication checks report not published. The daily shop check (`api/cron/shop-health.js`) will report the tee as missing until it is also removed from `src/facts.js`; that is expected.
 2. For a complete catalog rollback, open **Publishing → Manage**, keep **Online Store** unchecked, uncheck **Flylyfe Headless**, and save. Do not delete the product; keeping it preserves all variant IDs and Apliiq SKUs.
-3. Restore the immediately preceding Bongholeo deployment with `npx vercel promote dpl_AxHk6veRPosUmo1dMcwEno33viaa`. Re-check `https://bongholeo.com` after promotion.
+3. For an immediate site rollback, open Vercel → `bongholeo-site` → Deployments and use Instant Rollback to the previous production deployment (the one before the change being undone). Re-check `https://bongholeo.com` afterwards. Later pushes to `main` stay off production until the rollback is undone in Vercel. Do not promote an old deployment ID from this document.
 4. For a source-level rollback, create a normal revert of runtime commit `0ae7491` and push that revert to `origin/main`; do not reset shared history. The handoff-only commit `7b68b02` does not affect the runtime.
 5. Remove the product from collection `gid://shopify/Collection/357236211865` only if a completely clean Admin rollback is required.
 6. Leave Apliiq designs `6046092` and `6046093` in place unless the account owner explicitly requests archival; never repoint existing product or variant mappings.

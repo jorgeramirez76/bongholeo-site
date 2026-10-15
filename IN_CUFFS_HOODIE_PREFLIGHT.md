@@ -21,7 +21,7 @@ Last reconciled: 2026-08-25 (America/New_York)
 - Storefront female WebP: `public/media/merch/bongholeo-in-cuffs-hoodie-black-female.webp` (1024 × 1536)
 - Shopify-hosted male lifestyle: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-black-hoodie-male.png?v=1787703784`
 - Shopify-hosted female lifestyle: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-black-hoodie-female.png?v=1787703796`
-- Shopify-hosted production master: `https://cdn.shopify.com/s/files/1/0727/1153/6793/files/bongholeo-in-cuffs-print-hoodie-front-10x15-300dpi.png?v=1787703809`
+- Shopify-hosted production master (300 dpi hoodie front): uploaded to Shopify Files. Its URL is deliberately not listed here because Shopify Files are public and this repository is public; delete it from Shopify Admin → Content → Files once Apliiq's own copy and a private backup are confirmed.
 
 The two customer images were visually verified as separate photos and the production master remains excluded from the customer gallery.
 
