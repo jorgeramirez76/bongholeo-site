@@ -45,3 +45,17 @@ export function cartAttributes() {
     return []
   }
 }
+
+// Creates the cart with the visit's source attached, through create(attributes).
+// If Shopify refuses that request in any way (a GraphQL error, a userError, or
+// a dropped request), the cart is created once more without the source, so a
+// sale never depends on it. A failure that is not about the source fails again
+// and reaches the buyer as before.
+export async function createWithSource(create, attributes) {
+  if (!attributes?.length) return create([])
+  try {
+    const data = await create(attributes)
+    if (!data?.cartCreate?.userErrors?.length) return data
+  } catch { /* try again without the source */ }
+  return create([])
+}

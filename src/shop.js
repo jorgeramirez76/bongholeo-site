@@ -5,9 +5,10 @@
 //   VITE_SHOPIFY_COLLECTION        (optional) collection handle to feature, default "bongholeo"
 // Until then, shopConfigured is false and the site shows the "coming soon" drop teaser.
 // Mirrors the proven FLYLYFE headless pattern: live variants on-site, checkout handed to Shopify.
-import { API_VERSION, DEFAULT_COLLECTION, DISCOUNT_CODE } from './shop-config.js'
-import { retryableStatus, withRetry } from './retry.js'
-import { cartAttributes } from './attribution.js'
+import { DEFAULT_COLLECTION, DISCOUNT_CODE } from './shop-config.js'
+import { withRetry } from './retry.js'
+import { READ_TIMEOUT_MS, storefrontRequest } from './storefront.js'
+import { cartAttributes, createWithSource } from './attribution.js'
 
 const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
@@ -19,23 +20,10 @@ export { DISCOUNT_CODE }
 // Short, analytics-safe reason for a failed Storefront call.
 export const failureReason = (error) => String(error?.message || error || 'unknown').slice(0, 120)
 
-async function storefront(query, variables) {
-  const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': TOKEN,
-    },
-    body: JSON.stringify({ query, variables }),
-  })
-  if (!res.ok) throw Object.assign(new Error(`Storefront ${res.status}`), { retryable: retryableStatus(res.status) })
-  const json = await res.json()
-  if (json.errors?.length) {
-    const code = json.errors[0].extensions?.code
-    throw Object.assign(new Error(json.errors[0].message), { retryable: code === 'THROTTLED' || code === 'INTERNAL_SERVER_ERROR' })
-  }
-  return json.data
-}
+const storefront = (query, variables, options) =>
+  storefrontRequest({ domain: DOMAIN, token: TOKEN, query, variables, ...options })
+// Reads are cut off after READ_TIMEOUT_MS and retried (see storefront.js).
+const read = (query, variables) => storefront(query, variables, { timeoutMs: READ_TIMEOUT_MS })
 
 export function formatPrice(money) {
   if (!money) return ''
@@ -46,7 +34,7 @@ export function formatPrice(money) {
 
 // Fetch products in the featured collection with their variants.
 export async function fetchProducts(handle = shopCollection) {
-  const data = await withRetry(() => storefront(
+  const data = await withRetry(() => read(
     `query ($handle: String!) {
       collection(handle: $handle) {
         products(first: 24) {
@@ -70,7 +58,7 @@ export async function fetchProducts(handle = shopCollection) {
 // the public route independent of Shopify's numeric IDs while still making the
 // live variant IDs the source of truth for checkout.
 export async function fetchProduct(handle) {
-  const data = await withRetry(() => storefront(
+  const data = await withRetry(() => read(
     `query ($handle: String!) {
       product(handle: $handle) {
         id title handle description
@@ -87,9 +75,10 @@ export async function fetchProduct(handle) {
 }
 
 // Create a cart from line items and return the Shopify-hosted checkout URL,
-// plus whether Shopify accepted the 15%-off code the site promises. Not
-// retried automatically: the buyer can press again. The cart also carries
-// the visit's traffic source (see attribution.js).
+// plus whether Shopify accepted the 15%-off code the site promises. The cart
+// also carries the visit's traffic source (see attribution.js); a request
+// that fails with the source is sent once more without it. Beyond that it is
+// not retried automatically: the buyer can press again.
 const CART_CREATE = `mutation ($lines: [CartLineInput!]!, $codes: [String!], $attributes: [AttributeInput!]) {
   cartCreate(input: { lines: $lines, discountCodes: $codes, attributes: $attributes }) {
     cart { checkoutUrl discountCodes { code applicable } }
@@ -98,12 +87,8 @@ const CART_CREATE = `mutation ($lines: [CartLineInput!]!, $codes: [String!], $at
 }`
 
 export async function createCheckout(lines) {
-  const attributes = cartAttributes()
-  let data = await storefront(CART_CREATE, { lines, codes: [DISCOUNT_CODE], attributes })
-  // The source is nice to have; never let it block a sale.
-  if (attributes.length && data?.cartCreate?.userErrors?.some((e) => e.field?.includes('attributes'))) {
-    data = await storefront(CART_CREATE, { lines, codes: [DISCOUNT_CODE], attributes: [] })
-  }
+  // The source is nice to have; never let it block a sale (see attribution.js).
+  const data = await createWithSource((attributes) => storefront(CART_CREATE, { lines, codes: [DISCOUNT_CODE], attributes }), cartAttributes())
   const err = data?.cartCreate?.userErrors?.[0]
   if (err) throw new Error(err.message)
   const cart = data?.cartCreate?.cart

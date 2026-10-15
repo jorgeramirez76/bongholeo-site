@@ -13,7 +13,7 @@ The official Bongholeo site: a Vite + React storefront and public-record page. M
 - `src/facts.js` is the single source of truth for everything the site states (videos, press, appearances, FAQs, products). `src/pending-products.js` holds the In Cuffs hoodie facts, switched on by `src/product-flags.js`.
 - `scripts/build-shell.mjs` runs before every build and generates the crawler HTML, JSON-LD, product-page offers, `public/llms.txt`, `public/sitemap.xml` and `public/shipping-returns.html` from those facts. Edit facts, not the generated output.
 - `src/merch-policy.js` holds the shipping and returns policy and the seller-of-record line (Flylyfe).
-- `src/shop.js` talks to Shopify from the browser; `src/shop-config.js` holds the API version and the 15%-off code.
+- `src/shop.js` talks to Shopify from the browser through `src/storefront.js`, which cuts off a read that hangs for 8 seconds so it is retried (`src/retry.js`) instead of loading forever; `src/shop-config.js` holds the API version and the 15%-off code.
 - `src/attribution.js` records where a visit came from (UTM tags, referring site, landing page) and `src/shop.js` sends it with the cart, so Shopify shows each order's source under Additional details. Tag links you post, for example `https://bongholeo.com/?utm_source=instagram&utm_medium=bio`.
 - `api/videos.js` serves the "Latest from the channel" list from YouTube's RSS feed. When the feed fails it serves the newest taped appearances from `facts.js` (see `src/latest-videos.js`) and does not cache that answer.
 - `api/cron/shop-health.js` runs daily (see `crons` in `vercel.json`) and checks that Shopify still sells what `facts.js` advertises, at the advertised price, with the discount working.
