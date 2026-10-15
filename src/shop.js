@@ -7,6 +7,7 @@
 // Mirrors the proven FLYLYFE headless pattern: live variants on-site, checkout handed to Shopify.
 import { API_VERSION, DEFAULT_COLLECTION, DISCOUNT_CODE } from './shop-config.js'
 import { retryableStatus, withRetry } from './retry.js'
+import { cartAttributes } from './attribution.js'
 
 const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
@@ -85,18 +86,24 @@ export async function fetchProduct(handle) {
   return data?.product ?? null
 }
 
-// Create a cart from line items (not retried: the buyer can press again) and return the Shopify-hosted checkout URL,
-// plus whether Shopify accepted the 15%-off code the site promises.
+// Create a cart from line items and return the Shopify-hosted checkout URL,
+// plus whether Shopify accepted the 15%-off code the site promises. Not
+// retried automatically: the buyer can press again. The cart also carries
+// the visit's traffic source (see attribution.js).
+const CART_CREATE = `mutation ($lines: [CartLineInput!]!, $codes: [String!], $attributes: [AttributeInput!]) {
+  cartCreate(input: { lines: $lines, discountCodes: $codes, attributes: $attributes }) {
+    cart { checkoutUrl discountCodes { code applicable } }
+    userErrors { field message }
+  }
+}`
+
 export async function createCheckout(lines) {
-  const data = await storefront(
-    `mutation ($lines: [CartLineInput!]!, $codes: [String!]) {
-      cartCreate(input: { lines: $lines, discountCodes: $codes }) {
-        cart { checkoutUrl discountCodes { code applicable } }
-        userErrors { message }
-      }
-    }`,
-    { lines, codes: [DISCOUNT_CODE] },
-  )
+  const attributes = cartAttributes()
+  let data = await storefront(CART_CREATE, { lines, codes: [DISCOUNT_CODE], attributes })
+  // The source is nice to have; never let it block a sale.
+  if (attributes.length && data?.cartCreate?.userErrors?.some((e) => e.field?.includes('attributes'))) {
+    data = await storefront(CART_CREATE, { lines, codes: [DISCOUNT_CODE], attributes: [] })
+  }
   const err = data?.cartCreate?.userErrors?.[0]
   if (err) throw new Error(err.message)
   const cart = data?.cartCreate?.cart

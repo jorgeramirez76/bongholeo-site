@@ -8,5 +8,8 @@ import '@fontsource/ibm-plex-mono/latin-400.css'
 import '@fontsource/ibm-plex-mono/latin-500.css'
 import './doc.css'
 import { inject } from '@vercel/analytics'
+import { rememberLanding } from './attribution.js'
 
 inject()
+// Visitors who land here and buy later keep this page's traffic source.
+rememberLanding()

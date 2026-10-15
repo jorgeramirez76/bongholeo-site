@@ -379,6 +379,7 @@ writeFileSync(file('public/shipping-returns.html'), `<!doctype html>
 <title>Shipping &amp; Returns | Bongholeo Official Merch</title>
 <meta name="description" content="Bongholeo merch shipping rates, production and delivery timelines, international destinations, and 30-day returns and exchanges.">
 <link rel="canonical" href="${site.url}${policyPath}"><link rel="icon" href="/favicon.svg">
+<script defer src="/_vercel/insights/script.js"></script>
 <style>body{margin:0;background:#f3ead4;color:#17121d;font-family:Arial,sans-serif;line-height:1.75}main{max-width:780px;margin:auto;padding:40px 24px 72px}a{color:inherit;text-underline-offset:4px}h1{font-size:clamp(2rem,7vw,3.5rem);line-height:1.1}h2{margin-top:36px;font-size:1.4rem}nav{font-weight:bold}footer{border-top:1px solid;margin-top:40px;padding-top:24px}</style></head>
 <body><main><nav><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a></nav>
 <h1>Shipping &amp; returns</h1><p>For all official Bongholeo tees and hoodies. Updated September 30, 2026.</p>
