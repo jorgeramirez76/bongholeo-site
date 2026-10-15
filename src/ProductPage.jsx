@@ -7,6 +7,11 @@ import { MAIN_SIZES, THUMB_SIZES, resized, srcSetFor } from './merch-images.js'
 import './product.css'
 
 const HANDLE = document.body.dataset.productHandle || 'bongholeo-in-cuffs-tee'
+// Vercel Web Analytics on Pro records two custom properties per event (eight
+// only with the Web Analytics Plus add-on), so every event here sends at most
+// two. The failure events fold the page into `item` to keep their reason or
+// code while still telling the product page apart from the homepage cards.
+const EVENT_ITEM = `${HANDLE}:product`
 const facts = products.find((product) => product.handle === HANDLE)
 const SIZE_ORDER = ['S', 'M', 'L', 'XL', '2XL', '3XL']
 const defaultSelection = facts.defaultSelection || { Size: 'M', Color: facts.colors?.[0] || 'Black' }
@@ -35,7 +40,7 @@ export default function ProductPage() {
       .then((live) => {
         if (!live) {
           setStatus('missing')
-          track('shop_load_failed', { item: HANDLE, route: 'product', reason: 'product not in Headless' })
+          track('shop_load_failed', { item: EVENT_ITEM, reason: 'product not in Headless' })
           return
         }
         setProduct(live)
@@ -47,7 +52,7 @@ export default function ProductPage() {
       })
       .catch((error) => {
         setStatus('failed')
-        track('shop_load_failed', { item: HANDLE, route: 'product', reason: failureReason(error) })
+        track('shop_load_failed', { item: EVENT_ITEM, reason: failureReason(error) })
       })
   }, [attempt])
   const retry = () => { track('shop_retry', { item: HANDLE, route: 'product' }); setAttempt((n) => n + 1) }
@@ -100,7 +105,7 @@ export default function ProductPage() {
     try {
       const { checkoutUrl, discountApplicable } = await createCheckout([{ merchandiseId: matchedVariant.id, quantity: 1 }])
       if (checkoutUrl) {
-        if (!discountApplicable) track('discount_not_applicable', { item: HANDLE, route: 'product', code: DISCOUNT_CODE })
+        if (!discountApplicable) track('discount_not_applicable', { item: EVENT_ITEM, code: DISCOUNT_CODE })
         track('begin_checkout', { item: HANDLE, route: 'product' })
         window.location.href = checkoutUrl
         return
@@ -109,7 +114,7 @@ export default function ProductPage() {
       reason = failureReason(error)
     }
     // Keep the page usable, tell the buyer, and record why.
-    track('checkout_error', { item: HANDLE, route: 'product', reason })
+    track('checkout_error', { item: EVENT_ITEM, reason })
     setCheckoutFailed(true)
     setBuying(false)
   }
