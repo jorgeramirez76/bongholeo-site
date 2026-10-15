@@ -1,8 +1,8 @@
 import MerchPolicy from './MerchPolicy.jsx'
 import { useEffect, useState } from 'react'
 import { track } from '@vercel/analytics'
-import { createCheckout, fetchProduct, formatPrice, shopConfigured } from './shop.js'
-import { products } from './facts.js'
+import { DISCOUNT_CODE, createCheckout, failureReason, fetchProduct, formatPrice, shopConfigured } from './shop.js'
+import { products, site } from './facts.js'
 import './product.css'
 
 const HANDLE = document.body.dataset.productHandle || 'bongholeo-in-cuffs-tee'
@@ -21,6 +21,7 @@ export default function ProductPage() {
   const [selection, setSelection] = useState(defaultSelection)
   const [activeImage, setActiveImage] = useState(facts.gallery[0])
   const [buying, setBuying] = useState(false)
+  const [checkoutFailed, setCheckoutFailed] = useState(false)
   // loading → ready, or missing (not in Headless) / failed (Shopify error)
   const [status, setStatus] = useState(shopConfigured ? 'loading' : 'off')
 
@@ -28,7 +29,11 @@ export default function ProductPage() {
     if (!shopConfigured) return
     fetchProduct(HANDLE)
       .then((live) => {
-        if (!live) { setStatus('missing'); return }
+        if (!live) {
+          setStatus('missing')
+          track('shop_load_failed', { item: HANDLE, route: 'product', reason: 'product not in Headless' })
+          return
+        }
         setProduct(live)
         setStatus('ready')
         const variants = live?.variants?.nodes || []
@@ -36,7 +41,10 @@ export default function ProductPage() {
         const first = preferred || variants.find((variant) => variant.availableForSale) || variants[0]
         if (first) setSelection(Object.fromEntries(first.selectedOptions.map((option) => [option.name, option.value])))
       })
-      .catch(() => setStatus('failed'))
+      .catch((error) => {
+        setStatus('failed')
+        track('shop_load_failed', { item: HANDLE, route: 'product', reason: failureReason(error) })
+      })
   }, [])
 
   useEffect(() => {
@@ -81,17 +89,23 @@ export default function ProductPage() {
   const buy = async () => {
     if (!matchedVariant) return
     setBuying(true)
+    setCheckoutFailed(false)
     track('add_to_cart', { item: HANDLE, route: 'product' })
+    let reason = 'no checkout URL'
     try {
-      const checkoutUrl = await createCheckout([{ merchandiseId: matchedVariant.id, quantity: 1 }])
+      const { checkoutUrl, discountApplicable } = await createCheckout([{ merchandiseId: matchedVariant.id, quantity: 1 }])
       if (checkoutUrl) {
+        if (!discountApplicable) track('discount_not_applicable', { item: HANDLE, route: 'product', code: DISCOUNT_CODE })
         track('begin_checkout', { item: HANDLE, route: 'product' })
         window.location.href = checkoutUrl
         return
       }
-    } catch {
-      // Keep the product page usable if Shopify is temporarily unavailable.
+    } catch (error) {
+      reason = failureReason(error)
     }
+    // Keep the page usable, tell the buyer, and record why.
+    track('checkout_error', { item: HANDLE, route: 'product', reason })
+    setCheckoutFailed(true)
     setBuying(false)
   }
 
@@ -122,6 +136,7 @@ export default function ProductPage() {
         </div>
 
         <button className="product-buy" type="button" onClick={buy} disabled={!matchedVariant || buying}>{buyLabel}</button>
+        {checkoutFailed && <p className="product-error" role="alert">Checkout didn’t open. Please try again — if it keeps failing, email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
         <p className="product-secure">Secure Shopify checkout · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
       </div>
     </section>

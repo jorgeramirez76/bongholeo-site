@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import Lenis from 'lenis'
 import { track } from '@vercel/analytics'
 import './index.css'
-import { shopConfigured, fetchProducts, createCheckout, formatPrice } from './shop.js'
-import { videos, press, faqs, appearances, stats, products } from './facts.js'
+import { shopConfigured, fetchProducts, createCheckout, formatPrice, failureReason, DISCOUNT_CODE } from './shop.js'
+import { videos, press, faqs, appearances, stats, products, site } from './facts.js'
 
 const merch = products.map((p, i) => ({
   id: p.handle || `fallback-${i}`, name: p.name, edition: 'BONGHOLEO', copy: p.description,
@@ -52,7 +52,11 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [playing, setPlaying] = useState(null)
   const [liveProducts, setLiveProducts] = useState(null)
+  // loading → ready | failed; bumping shopAttempt retries the Storefront call.
+  const [shopStatus, setShopStatus] = useState(shopConfigured ? 'loading' : 'off')
+  const [shopAttempt, setShopAttempt] = useState(0)
   const [buying, setBuying] = useState(null)
+  const [checkoutError, setCheckoutError] = useState(null)
   const [sel, setSel] = useState({})
   const lenisRef = useRef(null)
   const closeMenu = () => setMenuOpen(false)
@@ -60,9 +64,27 @@ function App() {
   const [latest, setLatest] = useState([])
 
   useEffect(() => {
-    if (shopConfigured) fetchProducts().then(setLiveProducts).catch(() => setLiveProducts(null))
     fetch('/api/videos').then((r) => r.json()).then((d) => setLatest((d.videos || []).slice(0, 6))).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!shopConfigured) return
+    setShopStatus('loading')
+    fetchProducts()
+      .then((nodes) => {
+        setLiveProducts(nodes)
+        const listed = nodes.filter((product) => enabledProductHandles.has(product.handle))
+        // An empty or missing collection leaves nothing to buy: treat it as down.
+        if (!listed.length) track('shop_load_failed', { reason: 'no site products in the collection' })
+        setShopStatus(listed.length ? 'ready' : 'failed')
+      })
+      .catch((error) => {
+        setLiveProducts(null)
+        setShopStatus('failed')
+        track('shop_load_failed', { reason: failureReason(error) })
+      })
+  }, [shopAttempt])
+  const retryShop = () => { track('shop_retry'); setShopAttempt((n) => n + 1) }
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -155,14 +177,24 @@ function App() {
 
   const buy = async (variantId, id) => {
     setBuying(id)
+    setCheckoutError(null)
     track('add_to_cart', { item: id })
+    let reason = 'no checkout URL'
     try {
-      const url = await createCheckout([{ merchandiseId: variantId, quantity: 1 }])
-      if (url) { track('begin_checkout', { item: id }); window.location.href = url }
-      else setBuying(null)
-    } catch {
-      setBuying(null)
+      const { checkoutUrl, discountApplicable } = await createCheckout([{ merchandiseId: variantId, quantity: 1 }])
+      if (checkoutUrl) {
+        if (!discountApplicable) track('discount_not_applicable', { item: id, code: DISCOUNT_CODE })
+        track('begin_checkout', { item: id })
+        window.location.href = checkoutUrl
+        return
+      }
+    } catch (error) {
+      reason = failureReason(error)
     }
+    // Tell the buyer instead of silently resetting the button, and record why.
+    track('checkout_error', { item: id, reason })
+    setCheckoutError(id)
+    setBuying(null)
   }
 
   const shopBg = ['#0d0912', '#2b0d3a', '#f3ead4']
@@ -183,9 +215,11 @@ function App() {
         }
       })
     : merch
+  const shopDown = shopStatus === 'failed'
+  const merchBadge = !shopConfigured ? 'COMING SOON' : shopDown ? 'TEMPORARILY UNAVAILABLE' : 'LOADING SIZES…'
   return <main id="top">
     <a className="skip-link" href="#content">Skip to content</a>
-    <div className="bulletin"><span>NEW JERSEY · PUBLIC COMMENT · CIVIC SATIRE</span><strong>{shopConfigured ? 'FIRST DROP · 15% OFF — APPLIED AT CHECKOUT' : 'AS SEEN ON TMZ & JIMMY KIMMEL'}</strong></div>
+    <div className="bulletin"><span>NEW JERSEY · PUBLIC COMMENT · CIVIC SATIRE</span><strong>{shopConfigured && !shopDown ? 'FIRST DROP · 15% OFF — APPLIED AT CHECKOUT' : 'AS SEEN ON TMZ & JIMMY KIMMEL'}</strong></div>
     <header>
       <a className="logo" href="#top" aria-label="Bongholeo home"><img className="logo-img" src="/media/brand/bongholeo-logo.webp" alt="Bongholeo — Gavels the Truth" /></a>
       <nav className="desktop-nav" aria-label="Primary navigation"><a href="#record">WATCH THE VIDEO</a><a href="#story">THE STORY</a><a href="#press">PRESS</a><a href="#contact">CONTACT</a><a className="nav-shop" href="#shop" onClick={() => track('nav_shop')}>SHOP MERCH</a></nav>
@@ -233,10 +267,11 @@ function App() {
     <section className="merch" id="shop" aria-labelledby="merch-title">
       <div className="merch-head"><div className="rv"><div className="section-tag">03 / THE MERCH TABLE</div><h2 id="merch-title">MERCH FOR<br /><em>THE PEOPLE.</em></h2></div><p className="rv" style={{ '--rd': '140ms' }}>{shopConfigured ? 'You just watched him sing at a New Jersey town hall in a giant purple bong — the clip TMZ, Jimmy Kimmel and USA Today all ran. This is the exact crest he wore to the podium. Wear the thing that went viral — pick your size and check out below. Merch purchases help fund attorneys and legal action to challenge government overreach and defend the public’s right to be heard.' : 'The first drop is the Bongholeo crest — no spin, only truth, worn loud. The shop opens soon.'}</p></div>
       {shopConfigured && <div className="merch-proof rv"><span>The costume from the clip — now on a shirt.</span><div className="merch-proof-logos"><b>TMZ</b><i>◆</i><b>JIMMY KIMMEL</b><i>◆</i><b>USA TODAY</b><i>◆</i><b>STEREOGUM</b></div></div>}
-      <div className="merch-grid">{shopItems.map((item, mi) => <article className="merch-card rv" style={{ '--rd': `${mi * 120}ms` }} key={item.id}>{item.route ? <a href={item.route} className="merch-image-link" aria-label={`View ${item.name}`}><div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">COMING SOON</span>}{colourWithoutPhoto(item) && <span className="merch-photo-note">NO {colourWithoutPhoto(item).toUpperCase()} PHOTO YET</span>}</div></a> : <div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">COMING SOON</span>}{colourWithoutPhoto(item) && <span className="merch-photo-note">NO {colourWithoutPhoto(item).toUpperCase()} PHOTO YET</span>}</div>}<div className="merch-meta"><span>{item.edition}</span><span>{item.price}</span></div><h3>{item.route ? <a href={item.route}>{item.name}</a> : item.name}</h3><p>{item.copy}</p>{item.route && <a className="merch-details" href={item.route}>VIEW DETAILS <Arrow /></a>}{item.live && <div className="merch-selects">{item.optionNames.map((name) => <label className="merch-select" key={name}><span>{name.toUpperCase()}</span><select value={sel[item.id]?.[name] || ''} onChange={(e) => setSel({ ...sel, [item.id]: { ...sel[item.id], [name]: e.target.value } })}>{optionValues(item, name).map((v) => { const available = optionAvailable(item, name, v); return <option key={v} value={v} disabled={!available}>{available ? v : `${v} — sold out`}</option> })}</select></label>)}</div>}{item.live && <button className="merch-add" type="button" disabled={!matchedVariant(item) || buying === item.id} onClick={() => { const mv = matchedVariant(item); if (mv) buy(mv.id, item.id) }}>{!matchedVariant(item) ? soldOutLabel(item) : buying === item.id ? 'OPENING CHECKOUT…' : `ADD TO CART · ${item.price}`}</button>}{item.live && <span className="merch-secure">Secure Shopify checkout, hosted by our fulfillment partner · printed &amp; shipped to order</span>}</article>)}</div>
+      {shopDown && <p className="merch-status" role="status">The shop is temporarily unavailable, so sizes and checkout can’t load right now. <button type="button" onClick={retryShop}>Try again</button> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
+      <div className="merch-grid">{shopItems.map((item, mi) => <article className="merch-card rv" style={{ '--rd': `${mi * 120}ms` }} key={item.id}>{item.route ? <a href={item.route} className="merch-image-link" aria-label={`View ${item.name}`}><div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">{merchBadge}</span>}{colourWithoutPhoto(item) && <span className="merch-photo-note">NO {colourWithoutPhoto(item).toUpperCase()} PHOTO YET</span>}</div></a> : <div className={`merch-image${item.photo ? ' is-photo' : ''}`} style={{ background: item.bg }}><span className="merch-tag">{item.tag}</span><img src={variantImage(item) || item.image} alt={variantAlt(item)} loading="lazy" />{!item.live && <span className="merch-soon">{merchBadge}</span>}{colourWithoutPhoto(item) && <span className="merch-photo-note">NO {colourWithoutPhoto(item).toUpperCase()} PHOTO YET</span>}</div>}<div className="merch-meta"><span>{item.edition}</span><span>{item.price}</span></div><h3>{item.route ? <a href={item.route}>{item.name}</a> : item.name}</h3><p>{item.copy}</p>{item.route && <a className="merch-details" href={item.route}>VIEW DETAILS <Arrow /></a>}{item.live && <div className="merch-selects">{item.optionNames.map((name) => <label className="merch-select" key={name}><span>{name.toUpperCase()}</span><select value={sel[item.id]?.[name] || ''} onChange={(e) => setSel({ ...sel, [item.id]: { ...sel[item.id], [name]: e.target.value } })}>{optionValues(item, name).map((v) => { const available = optionAvailable(item, name, v); return <option key={v} value={v} disabled={!available}>{available ? v : `${v} — sold out`}</option> })}</select></label>)}</div>}{item.live && <button className="merch-add" type="button" disabled={!matchedVariant(item) || buying === item.id} onClick={() => { const mv = matchedVariant(item); if (mv) buy(mv.id, item.id) }}>{!matchedVariant(item) ? soldOutLabel(item) : buying === item.id ? 'OPENING CHECKOUT…' : `ADD TO CART · ${item.price}`}</button>}{checkoutError === item.id && <p className="merch-error" role="alert">Checkout didn’t open. Please try again — if it keeps failing, email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}{item.live && <span className="merch-secure">Secure Shopify checkout, hosted by our fulfillment partner · printed &amp; shipped to order</span>}</article>)}</div>
       {shopConfigured && <div className="merch-trust">PRINTED TO ORDER · SECURE SHOPIFY CHECKOUT · HEAVYWEIGHT RING-SPUN COTTON</div>}
-      {shopConfigured && <div className="merch-offer"><b>15% OFF</b> THE FIRST DROP — APPLIED AUTOMATICALLY AT CHECKOUT, NO CODE NEEDED</div>}
-      <div className="merch-cta"><p>{shopConfigured ? 'The drop is live — wear the thing that went viral.' : 'Be first when the drop lands.'}</p>{shopConfigured ? <button className="merch-button" type="button" onClick={() => { track('merch_cta_shop'); scrollToEl('.merch-add', 180, 'shop') }}>GRAB THE CREST <Arrow /></button> : <a className="merch-button" href="https://www.instagram.com/bongholeo/" target="_blank" rel="noreferrer">FOLLOW @BONGHOLEO FOR THE DROP <Arrow /></a>}</div>
+      {shopConfigured && !shopDown && <div className="merch-offer"><b>15% OFF</b> THE FIRST DROP — APPLIED AUTOMATICALLY AT CHECKOUT, NO CODE NEEDED</div>}
+      <div className="merch-cta"><p>{shopDown ? 'The shop is temporarily unavailable.' : shopConfigured ? 'The drop is live — wear the thing that went viral.' : 'Be first when the drop lands.'}</p>{shopDown ? <button className="merch-button" type="button" onClick={retryShop}>TRY AGAIN <Arrow /></button> : shopConfigured ? <button className="merch-button" type="button" onClick={() => { track('merch_cta_shop'); scrollToEl('.merch-add', 180, 'shop') }}>GRAB THE CREST <Arrow /></button> : <a className="merch-button" href="https://www.instagram.com/bongholeo/" target="_blank" rel="noreferrer">FOLLOW @BONGHOLEO FOR THE DROP <Arrow /></a>}</div>
       <div className="merch-lifestyle"><div className="merch-lifestyle-photo rv-img"><img src="/media/merch/gavels-tee-black-womens.webp" alt="The Bongholeo Gavels The Truth tee in black, worn on a New Jersey street" loading="lazy" /></div><div className="merch-lifestyle-copy rv" style={{ '--rd': '160ms' }}><span className="merch-lifestyle-tag">WORN IN THE WILD</span><h3>Put it on the public <em>record.</em></h3><p>The Gavels The Truth tee — heavyweight cotton, oversized front print. Out on the street where the record actually lives.</p></div></div>
     </section>
 

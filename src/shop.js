@@ -5,13 +5,17 @@
 //   VITE_SHOPIFY_COLLECTION        (optional) collection handle to feature, default "bongholeo"
 // Until then, shopConfigured is false and the site shows the "coming soon" drop teaser.
 // Mirrors the proven FLYLYFE headless pattern: live variants on-site, checkout handed to Shopify.
+import { API_VERSION, DEFAULT_COLLECTION, DISCOUNT_CODE } from './shop-config.js'
 
 const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
-const API_VERSION = '2026-07'
 
 export const shopConfigured = Boolean(DOMAIN && TOKEN)
-export const shopCollection = import.meta.env.VITE_SHOPIFY_COLLECTION || 'bongholeo'
+export const shopCollection = import.meta.env.VITE_SHOPIFY_COLLECTION || DEFAULT_COLLECTION
+export { DISCOUNT_CODE }
+
+// Short, analytics-safe reason for a failed Storefront call.
+export const failureReason = (error) => String(error?.message || error || 'unknown').slice(0, 120)
 
 async function storefront(query, variables) {
   const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
@@ -77,18 +81,23 @@ export async function fetchProduct(handle) {
   return data?.product ?? null
 }
 
-// Create a cart from line items and return the Shopify-hosted checkout URL.
+// Create a cart from line items and return the Shopify-hosted checkout URL,
+// plus whether Shopify accepted the 15%-off code the site promises.
 export async function createCheckout(lines) {
   const data = await storefront(
-    `mutation ($lines: [CartLineInput!]!) {
-      cartCreate(input: { lines: $lines, discountCodes: ["GAVELS15"] }) {
-        cart { checkoutUrl }
+    `mutation ($lines: [CartLineInput!]!, $codes: [String!]) {
+      cartCreate(input: { lines: $lines, discountCodes: $codes }) {
+        cart { checkoutUrl discountCodes { code applicable } }
         userErrors { message }
       }
     }`,
-    { lines },
+    { lines, codes: [DISCOUNT_CODE] },
   )
   const err = data?.cartCreate?.userErrors?.[0]
   if (err) throw new Error(err.message)
-  return data?.cartCreate?.cart?.checkoutUrl
+  const cart = data?.cartCreate?.cart
+  return {
+    checkoutUrl: cart?.checkoutUrl,
+    discountApplicable: Boolean(cart?.discountCodes?.some((d) => d.applicable && d.code.toUpperCase() === DISCOUNT_CODE)),
+  }
 }

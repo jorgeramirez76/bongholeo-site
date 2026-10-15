@@ -1097,6 +1097,35 @@ footer .logo-img {
   font-weight: 700;
 }
 
+.merch-status,
+.merch-error {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid #9b1c1c;
+  background: #f8e5df;
+  color: #5c1010;
+  font: 400 13px/1.5 var(--mono);
+}
+
+.merch-status {
+  margin-top: 32px;
+}
+
+.merch-status a,
+.merch-error a,
+.merch-status button {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.merch-status button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
 .faq {
   background: var(--black);
   color: var(--white);
