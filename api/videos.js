@@ -3,6 +3,15 @@
 const CHANNEL_ID = 'UCMEhjgjJbD27K7ZSQwKnkzg'
 
 export default async function handler(req, res) {
+  // Each distinct query string is its own edge-cache entry, so ?anything
+  // would skip the cache and refetch YouTube. Send every variant to the one
+  // cached URL; the site itself never adds a query.
+  if (req.url?.includes('?')) {
+    res.statusCode = 308
+    res.setHeader('Location', '/api/videos')
+    res.setHeader('Cache-Control', 'public, s-maxage=86400')
+    return res.end()
+  }
   try {
     const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`)
     if (!r.ok) throw new Error(`feed ${r.status}`)
@@ -20,7 +29,10 @@ export default async function handler(req, res) {
       .slice(0, 6)
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
     res.status(200).json({ videos })
-  } catch {
+  } catch (error) {
+    // Log it: otherwise the "Latest from the channel" block just disappears
+    // with no trace in Vercel's logs.
+    console.error(`videos: YouTube feed failed (${error.message}); returning an empty list`)
     res.setHeader('Cache-Control', 's-maxage=300')
     res.status(200).json({ videos: [] })
   }
