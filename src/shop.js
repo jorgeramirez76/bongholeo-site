@@ -6,6 +6,7 @@
 // Until then, shopConfigured is false and the site shows the "coming soon" drop teaser.
 // Mirrors the proven FLYLYFE headless pattern: live variants on-site, checkout handed to Shopify.
 import { API_VERSION, DEFAULT_COLLECTION, DISCOUNT_CODE } from './shop-config.js'
+import { retryableStatus, withRetry } from './retry.js'
 
 const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
@@ -26,9 +27,12 @@ async function storefront(query, variables) {
     },
     body: JSON.stringify({ query, variables }),
   })
-  if (!res.ok) throw new Error(`Storefront ${res.status}`)
+  if (!res.ok) throw Object.assign(new Error(`Storefront ${res.status}`), { retryable: retryableStatus(res.status) })
   const json = await res.json()
-  if (json.errors?.length) throw new Error(json.errors[0].message)
+  if (json.errors?.length) {
+    const code = json.errors[0].extensions?.code
+    throw Object.assign(new Error(json.errors[0].message), { retryable: code === 'THROTTLED' || code === 'INTERNAL_SERVER_ERROR' })
+  }
   return json.data
 }
 
@@ -41,7 +45,7 @@ export function formatPrice(money) {
 
 // Fetch products in the featured collection with their variants.
 export async function fetchProducts(handle = shopCollection) {
-  const data = await storefront(
+  const data = await withRetry(() => storefront(
     `query ($handle: String!) {
       collection(handle: $handle) {
         products(first: 24) {
@@ -57,7 +61,7 @@ export async function fetchProducts(handle = shopCollection) {
       }
     }`,
     { handle },
-  )
+  ))
   return data?.collection?.products?.nodes ?? []
 }
 
@@ -65,7 +69,7 @@ export async function fetchProducts(handle = shopCollection) {
 // the public route independent of Shopify's numeric IDs while still making the
 // live variant IDs the source of truth for checkout.
 export async function fetchProduct(handle) {
-  const data = await storefront(
+  const data = await withRetry(() => storefront(
     `query ($handle: String!) {
       product(handle: $handle) {
         id title handle description
@@ -77,11 +81,11 @@ export async function fetchProduct(handle) {
       }
     }`,
     { handle },
-  )
+  ))
   return data?.product ?? null
 }
 
-// Create a cart from line items and return the Shopify-hosted checkout URL,
+// Create a cart from line items (not retried: the buyer can press again) and return the Shopify-hosted checkout URL,
 // plus whether Shopify accepted the 15%-off code the site promises.
 export async function createCheckout(lines) {
   const data = await storefront(

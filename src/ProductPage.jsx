@@ -24,9 +24,12 @@ export default function ProductPage() {
   const [checkoutFailed, setCheckoutFailed] = useState(false)
   // loading → ready, or missing (not in Headless) / failed (Shopify error)
   const [status, setStatus] = useState(shopConfigured ? 'loading' : 'off')
+  // Bumping attempt re-runs the Shopify request after a failure.
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!shopConfigured) return
+    setStatus('loading')
     fetchProduct(HANDLE)
       .then((live) => {
         if (!live) {
@@ -45,7 +48,8 @@ export default function ProductPage() {
         setStatus('failed')
         track('shop_load_failed', { item: HANDLE, route: 'product', reason: failureReason(error) })
       })
-  }, [])
+  }, [attempt])
+  const retry = () => { track('shop_retry', { item: HANDLE, route: 'product' }); setAttempt((n) => n + 1) }
 
   useEffect(() => {
     const color = selection.Color
@@ -136,6 +140,7 @@ export default function ProductPage() {
         </div>
 
         <button className="product-buy" type="button" onClick={buy} disabled={!matchedVariant || buying}>{buyLabel}</button>
+        {status === 'failed' && <p className="product-error" role="status">Sizes and checkout couldn’t load from Shopify. <button type="button" onClick={retry}>Try again</button> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
         {checkoutFailed && <p className="product-error" role="alert">Checkout didn’t open. Please try again — if it keeps failing, email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
         <p className="product-secure">Secure Shopify checkout by Flylyfe, which processes the order · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
       </div>
