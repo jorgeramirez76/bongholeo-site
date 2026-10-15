@@ -5,6 +5,7 @@ import { track } from '@vercel/analytics'
 import './index.css'
 import { shopConfigured, fetchProducts, createCheckout, formatPrice, failureReason, DISCOUNT_CODE } from './shop.js'
 import { videos, press, faqs, appearances, stats, products, site } from './facts.js'
+import { LATEST_COUNT, routeVideos } from './latest-videos.js'
 
 const merch = products.map((p, i) => ({
   id: p.handle || `fallback-${i}`, name: p.name, edition: 'BONGHOLEO', copy: p.description,
@@ -61,10 +62,15 @@ function App() {
   const lenisRef = useRef(null)
   const closeMenu = () => setMenuOpen(false)
 
-  const [latest, setLatest] = useState([])
+  // live: straight from the channel feed. Otherwise the route's newest tapes,
+  // so the block never vanishes when YouTube's feed is down.
+  const [latest, setLatest] = useState({ videos: [], live: false })
 
   useEffect(() => {
-    fetch('/api/videos').then((r) => r.json()).then((d) => setLatest((d.videos || []).slice(0, 6))).catch(() => {})
+    fetch('/api/videos')
+      .then((r) => r.json())
+      .then((d) => setLatest(d.videos?.length ? { videos: d.videos.slice(0, LATEST_COUNT), live: Boolean(d.live) } : { videos: routeVideos, live: false }))
+      .catch(() => setLatest({ videos: routeVideos, live: false }))
   }, [])
 
   useEffect(() => {
@@ -253,7 +259,7 @@ function App() {
     <section className="record" id="record" aria-labelledby="record-title">
       <div className="record-head"><div className="rv"><div className="section-tag light">02 / THE PUBLIC RECORD</div><h2 id="record-title">WATCH<br />WHAT<br /><em>HAPPENED.</em></h2></div><p className="rv" style={{ '--rd': '140ms' }}>Official footage, field tapes, and public-comment interventions. No renderings. No recreations. Just the room as it happened.</p></div>
       <div className="record-grid">{videos.map((video, index) => <div className={`record-card card-${index + 1} rv`} style={{ '--rd': `${index * 110}ms` }} key={video.id}><div className="record-image rv-img" style={{ '--rd': `${index * 110 + 150}ms` }}>{playing === video.id ? <iframe className="record-embed" src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&playsinline=1`} title={video.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : <button className="record-play-btn" type="button" onClick={() => setPlaying(video.id)} aria-label={`Play video: ${video.title}`}><img src={video.image} alt={`${video.title} — ${video.label}`} loading={index === 0 ? 'eager' : 'lazy'} /><span className="source-label">{video.source}</span><span className="card-play">▶</span></button>}</div><div className="card-meta"><span>{video.label}</span><span>0{index + 1}</span></div><a className="record-title-link" href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noreferrer"><h3>{video.title} <Arrow /></h3></a><p>{video.copy}</p>{index === 0 && <a className="record-shop-link" href="/cranford-july-7-2026" onClick={() => track('outbound_cranford')}>BONGHOLEO IN CRANFORD · JULY 7, 2026 <Arrow /></a>}{index === 0 && shopConfigured && <a className="record-shop-link" href="#shop" onClick={() => track('record_shop')}>WEAR THE BONG THAT WENT VIRAL <Arrow /></a>}</div>)}</div>
-      {latest.length > 0 && <div className="latest rv"><div className="latest-head"><span className="live-pill"><i />AUTO-UPDATED</span><h3>Latest from the channel</h3></div><p className="latest-note">Straight from the channel feed — meetings, other speakers and other towns. The featured tapes above may appear here too.</p><div className="latest-grid">{latest.map((v) => <a key={v.id} href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" onClick={() => track('outbound_youtube', { video: v.id })}><div className="latest-thumb"><img src={v.thumb} alt={v.title} loading="lazy" /></div><h4>{v.title}</h4><time>{new Date(v.published).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time></a>)}</div></div>}
+      {latest.videos.length > 0 && <div className="latest rv"><div className="latest-head"><span className="live-pill">{latest.live ? <><i />AUTO-UPDATED</> : 'FROM THE ROUTE'}</span><h3>{latest.live ? 'Latest from the channel' : 'Recent meeting tapes'}</h3></div><p className="latest-note">{latest.live ? 'Straight from the channel feed — meetings, other speakers and other towns. The featured tapes above may appear here too.' : 'The channel feed isn’t loading right now, so these are the newest tapes from the route below. Every upload is on the channel.'}</p><div className="latest-grid">{latest.videos.map((v) => <a key={v.id} href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" onClick={() => track('outbound_youtube', { video: v.id })}><div className="latest-thumb"><img src={v.thumb} alt={v.title} loading="lazy" /></div><h4>{v.title}</h4><time>{new Date(v.published).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time></a>)}</div></div>}
 
       <div className="route rv">
         <div className="route-head"><h3>The route</h3><p>Where the costume has turned up, most recent first. Every line links to the tape — and the meeting that went national has <a href="/cranford-july-7-2026">its own full account</a>.</p></div>

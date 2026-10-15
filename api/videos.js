@@ -1,6 +1,11 @@
 // Auto-updating video feed: pulls the Social Justice Waterpipe channel RSS
-// server-side (no API key) so the site always shows the newest uploads.
+// server-side (no API key) so the site shows the newest uploads. When the feed
+// fails, it serves the newest taped appearances from facts.js instead.
+import { parseFeed, routeVideos } from '../src/latest-videos.js'
+
 const CHANNEL_ID = 'UCMEhjgjJbD27K7ZSQwKnkzg'
+// A hung feed must not hold the function open; the page is fine without it.
+const FEED_TIMEOUT_MS = 4000
 
 export default async function handler(req, res) {
   // Each distinct query string is its own edge-cache entry, so ?anything
@@ -13,27 +18,22 @@ export default async function handler(req, res) {
     return res.end()
   }
   try {
-    const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`)
+    const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`, {
+      signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
+    })
     if (!r.ok) throw new Error(`feed ${r.status}`)
-    const xml = await r.text()
-    const videos = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)]
-      .map(([, e]) => ({
-        id: e.match(/<yt:videoId>([^<]+)/)?.[1],
-        title: (e.match(/<title>([^<]+)/)?.[1] || '')
-          .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-          .replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
-        published: e.match(/<published>([^<]+)/)?.[1],
-        thumb: e.match(/<media:thumbnail url="([^"]+)"/)?.[1],
-      }))
-      .filter((v) => v.id)
-      .slice(0, 6)
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
-    res.status(200).json({ videos })
+    const videos = parseFeed(await r.text())
+    if (!videos.length) throw new Error('feed had no videos')
+    // The channel posts a few times a week: six hours fresh, then up to a week
+    // of serving this list while the edge refreshes it in the background.
+    res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=604800')
+    res.status(200).json({ videos, live: true })
   } catch (error) {
-    // Log it: otherwise the "Latest from the channel" block just disappears
-    // with no trace in Vercel's logs.
-    console.error(`videos: YouTube feed failed (${error.message}); returning an empty list`)
-    res.setHeader('Cache-Control', 's-maxage=300')
-    res.status(200).json({ videos: [] })
+    // Log it: otherwise a dead feed leaves no trace in Vercel's logs.
+    console.error(`videos: YouTube feed failed (${error.message}); serving the route's recent tapes`)
+    // Never cache the fallback, so it cannot replace a good list at the edge
+    // and the next request asks YouTube again.
+    res.setHeader('Cache-Control', 'no-store')
+    res.status(200).json({ videos: routeVideos, live: false })
   }
 }

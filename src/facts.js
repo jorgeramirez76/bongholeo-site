@@ -252,7 +252,7 @@ export const faqs = [
   },
   {
     q: 'Where can I watch the clips?',
-    a: 'On the Social Justice Waterpipe YouTube channel (@Bongholeo420), which has roughly 200 videos of New Jersey public meetings, and here at bongholeo.com, where the latest uploads appear automatically.',
+    a: 'On the Social Justice Waterpipe YouTube channel (@Bongholeo420), which has roughly 200 videos of New Jersey public meetings, and here at bongholeo.com, which shows recent tapes from the channel and links the footage of every meeting on the appearance route.',
   },
   {
     q: 'Where can I buy Bongholeo merch?',

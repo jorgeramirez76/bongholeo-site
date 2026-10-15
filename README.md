@@ -14,7 +14,7 @@ The official Bongholeo site: a Vite + React storefront and public-record page. M
 - `scripts/build-shell.mjs` runs before every build and generates the crawler HTML, JSON-LD, product-page offers, `public/llms.txt`, `public/sitemap.xml` and `public/shipping-returns.html` from those facts. Edit facts, not the generated output.
 - `src/merch-policy.js` holds the shipping and returns policy and the seller-of-record line (Flylyfe).
 - `src/shop.js` talks to Shopify from the browser; `src/shop-config.js` holds the API version and the 15%-off code.
-- `api/videos.js` serves the "Latest from the channel" list from YouTube's RSS feed.
+- `api/videos.js` serves the "Latest from the channel" list from YouTube's RSS feed. When the feed fails it serves the newest taped appearances from `facts.js` (see `src/latest-videos.js`) and does not cache that answer.
 - `api/cron/shop-health.js` runs daily (see `crons` in `vercel.json`) and checks that Shopify still sells what `facts.js` advertises, at the advertised price, with the discount working.
 - `IN_CUFFS_*` files are the release and rollback runbooks for the In Cuffs tee and hoodie.
 
