@@ -22,6 +22,7 @@ const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const between = (src, tag, body) => {
   const start = src.indexOf(`<!-- ${tag}:START`)
@@ -357,12 +358,17 @@ for (const product of products.filter((p) => p.route && p.page)) {
   let source = readFileSync(path, 'utf8').replace(/<div id="root">[\s\S]*?<\/div>/, shell)
   source = source.replace(/\s*<script id="product-breadcrumbs" type="application\/ld\+json">[\s\S]*?<\/script>/, '')
   source = source.replace('</head>', `  <script id="product-breadcrumbs" type="application/ld+json">${JSON.stringify(breadcrumbs)}</script>\n  </head>`)
+  // Human-readable copy a shopper or search result shows. URLs, file names and
+  // photo alt text are left out: they name the colour a photo shows (for
+  // example "-black-" in a file name), which is not a promise to sell it.
+  const shownCopy = []
   source = source.replace(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g, (tag, json) => {
     const data = JSON.parse(json)
     if (data['@type'] !== 'Product') return tag
     // Price, offer count and description come from facts, never from the
     // hand-written page, so the merchant markup cannot drift from the site.
     data.description = product.description
+    shownCopy.push(data.name, data.description)
     if (data.offers['@type'] === 'AggregateOffer') {
       const colorCount = product.colors?.length ? saleColors(product).length : 1
       Object.assign(data.offers, { lowPrice: product.price, highPrice: product.price, offerCount: colorCount * (product.sizes?.length || 1) })
@@ -372,12 +378,18 @@ for (const product of products.filter((p) => p.route && p.page)) {
     Object.assign(data.offers, merchantPolicy(product))
     return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`
   })
-  // The hand-written <head> (title, meta and OG copy) must not advertise a
+  // The hand-written <head> copy (title, descriptions) must not advertise a
   // colour Shopify will not sell.
-  const headCopy = source.slice(0, source.indexOf('</head>')).toLowerCase()
+  const headSource = source.slice(0, source.indexOf('</head>'))
+  shownCopy.push(headSource.match(/<title>([\s\S]*?)<\/title>/)?.[1])
+  for (const [, content] of headSource.matchAll(/<meta\s+(?:name|property)="(?:description|og:title|og:description|twitter:title|twitter:description)"\s+content="([^"]*)"/g)) {
+    shownCopy.push(content)
+  }
   for (const color of product.soldOutColors || []) {
-    if (headCopy.includes(color.toLowerCase())) {
-      throw new Error(`${product.route}.html <head> still advertises sold-out colour "${color}"`)
+    const mention = new RegExp(`\\b${escapeRegExp(color).replace(/\s+/g, '\\s+')}\\b`, 'i')
+    const advert = shownCopy.find((text) => text && mention.test(text))
+    if (advert) {
+      throw new Error(`${product.route.slice(1)}.html still advertises sold-out colour "${color}": "${advert}". Remove "${color}" from that title or description (the page's <head>, or the product's description in src/facts.js / src/pending-products.js), or take it out of soldOutColors if it sells again.`)
     }
   }
   writeFileSync(path, source)
