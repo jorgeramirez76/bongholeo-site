@@ -25,7 +25,7 @@
   align-items: center;
   gap: 9px;
   color: var(--white);
-  font: 500 10px var(--mono);
+  font: 500 12px var(--mono);
   letter-spacing: .1em;
 }
 
@@ -118,6 +118,10 @@
   margin: 0 0 28px;
 }
 
+.product-lead {
+  margin-top: 34px;
+}
+
 .product-lead,
 .product-copy li,
 .product-story p {
@@ -150,7 +154,8 @@
   background: #ece1c4;
   color: var(--black);
   padding: 11px 14px;
-  font: 500 15px var(--mono);
+  /* 16px or more, or iPhones zoom the page when the menu is tapped. */
+  font: 500 16px var(--mono);
 }
 
 .product-buy {
@@ -239,10 +244,6 @@
 }
 
 @media(max-width: 520px) {
-  .product-header > a:last-child {
-    font-size: 8px;
-  }
-
   .product-options {
     grid-template-columns: 1fr;
   }

@@ -133,9 +133,7 @@ export default function ProductPage() {
         <span className="product-kicker">{facts.page.kicker}</span>
         <h1 id="product-title">{facts.page.title}<br /><em>{facts.page.emphasis}</em></h1>
         <p className="product-price">{price}</p>
-        <p className="product-lead">{facts.page.lead}</p>
-        <ul>{facts.page.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-
+        {/* Options and the buy button come before the description so phones reach them without scrolling past every feature. */}
         <div className="product-options">
           {optionNames.map((name) => <label key={name}><span>{name.toUpperCase()}</span><select value={selection[name] || ''} onChange={(event) => setSelection({ ...selection, [name]: event.target.value })}>{optionValues(name).map((value) => { const available = optionAvailable(name, value); return <option key={value} value={value} disabled={!available}>{available ? value : `${value} — sold out`}</option> })}</select></label>)}
         </div>
@@ -144,6 +142,9 @@ export default function ProductPage() {
         {status === 'failed' && <p className="product-error" role="status">Sizes and checkout couldn’t load from Shopify. <button type="button" onClick={retry}>Try again</button> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
         {checkoutFailed && <p className="product-error" role="alert">Checkout didn’t open. Please try again — if it keeps failing, email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
         <p className="product-secure">Secure Shopify checkout by Flylyfe, which processes the order · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
+
+        <p className="product-lead">{facts.page.lead}</p>
+        <ul>{facts.page.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
       </div>
     </section>
 
