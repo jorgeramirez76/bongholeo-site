@@ -9,6 +9,10 @@ const HANDLE = document.body.dataset.productHandle || 'bongholeo-in-cuffs-tee'
 const facts = products.find((product) => product.handle === HANDLE)
 const SIZE_ORDER = ['S', 'M', 'L', 'XL', '2XL', '3XL']
 const defaultSelection = facts.defaultSelection || { Size: 'M', Color: facts.colors?.[0] || 'Black' }
+const soldOutColors = facts.soldOutColors || []
+const slug = (value) => value.toLowerCase().replace(/\s+/g, '-')
+// Which garment colour a gallery photo shows, read from its file name.
+const photoColor = (src) => facts.colors?.find((color) => src.includes(`-${slug(color)}-`))
 
 const Arrow = () => <svg className="arrow" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 14 14 4M6 4h8v8" /></svg>
 
@@ -17,25 +21,29 @@ export default function ProductPage() {
   const [selection, setSelection] = useState(defaultSelection)
   const [activeImage, setActiveImage] = useState(facts.gallery[0])
   const [buying, setBuying] = useState(false)
-  const [loadFailed, setLoadFailed] = useState(false)
+  // loading → ready, or missing (not in Headless) / failed (Shopify error)
+  const [status, setStatus] = useState(shopConfigured ? 'loading' : 'off')
 
   useEffect(() => {
     if (!shopConfigured) return
     fetchProduct(HANDLE)
       .then((live) => {
+        if (!live) { setStatus('missing'); return }
         setProduct(live)
+        setStatus('ready')
         const variants = live?.variants?.nodes || []
         const preferred = variants.find((variant) => variant.availableForSale && variant.selectedOptions.every((option) => defaultSelection[option.name] === option.value))
         const first = preferred || variants.find((variant) => variant.availableForSale) || variants[0]
         if (first) setSelection(Object.fromEntries(first.selectedOptions.map((option) => [option.name, option.value])))
       })
-      .catch(() => setLoadFailed(true))
+      .catch(() => setStatus('failed'))
   }, [])
 
   useEffect(() => {
-    const color = selection.Color?.toLowerCase()
+    const color = selection.Color
     if (!color) return
-    const match = facts.gallery.find((image) => image.src.includes(`-${color}-male`))
+    const src = facts.imagesByColor?.[color]
+    const match = facts.gallery.find((image) => image.src === src) || facts.gallery.find((image) => photoColor(image.src) === color)
     if (match) setActiveImage(match)
   }, [selection.Color])
 
@@ -47,8 +55,28 @@ export default function ProductPage() {
       : name === 'Size' ? facts.sizes : facts.colors
     return name === 'Size' ? SIZE_ORDER.filter((size) => values.includes(size)) : values
   }
+  // A colour is available when any size of it sells; a size is available when
+  // it sells in the chosen colour. Before Shopify answers, trust facts.
+  const optionAvailable = (name, value) => {
+    if (!variants.length) return !(name === 'Color' && soldOutColors.includes(value))
+    return variants.some((variant) => variant.availableForSale && variant.selectedOptions.every((option) => {
+      if (option.name === name) return option.value === value
+      return name === 'Color' || option.name !== 'Color' || option.value === selection.Color
+    }))
+  }
   const matchedVariant = variants.find((variant) => variant.availableForSale && variant.selectedOptions.every((option) => selection[option.name] === option.value))
   const price = product ? formatPrice(product.priceRange.minVariantPrice) : `$${facts.price}`
+  const buyLabel = buying ? 'OPENING CHECKOUT…'
+    : matchedVariant ? `ADD TO CART · ${price}`
+      : status === 'ready' ? `SOLD OUT IN THIS ${optionNames.includes('Color') ? 'COLOR/SIZE' : 'SIZE'}`
+        : status === 'failed' ? 'SHOPIFY TEMPORARILY UNAVAILABLE'
+          : status === 'missing' || status === 'off' ? 'CURRENTLY UNAVAILABLE'
+            : 'LOADING LIVE OPTIONS…'
+  // Say so when the chosen colour has no photo of its own yet.
+  const shownColor = photoColor(activeImage.src)
+  const photoNote = selection.Color && shownColor && shownColor !== selection.Color && !facts.gallery.some((image) => photoColor(image.src) === selection.Color)
+    ? `Photo shows ${shownColor}. No ${selection.Color} photo yet.`
+    : null
 
   const buy = async () => {
     if (!matchedVariant) return
@@ -76,6 +104,7 @@ export default function ProductPage() {
     <section className="product-layout" aria-labelledby="product-title">
       <div className="product-media">
         <div className="product-main-image"><img src={activeImage.src} alt={activeImage.alt} /></div>
+        {photoNote && <p className="product-photo-note">{photoNote}</p>}
         <div className="product-thumbs" aria-label="Product photographs">
           {facts.gallery.map((image) => <button type="button" key={image.src} className={activeImage.src === image.src ? 'is-active' : undefined} onClick={() => setActiveImage(image)} aria-label={`Show ${image.alt}`} aria-pressed={activeImage.src === image.src}><img src={image.src} alt="" /></button>)}
         </div>
@@ -89,10 +118,10 @@ export default function ProductPage() {
         <ul>{facts.page.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
 
         <div className="product-options">
-          {optionNames.map((name) => <label key={name}><span>{name.toUpperCase()}</span><select value={selection[name] || ''} onChange={(event) => setSelection({ ...selection, [name]: event.target.value })}>{optionValues(name).map((value) => <option key={value} value={value}>{value}</option>)}</select></label>)}
+          {optionNames.map((name) => <label key={name}><span>{name.toUpperCase()}</span><select value={selection[name] || ''} onChange={(event) => setSelection({ ...selection, [name]: event.target.value })}>{optionValues(name).map((value) => { const available = optionAvailable(name, value); return <option key={value} value={value} disabled={!available}>{available ? value : `${value} — sold out`}</option> })}</select></label>)}
         </div>
 
-        <button className="product-buy" type="button" onClick={buy} disabled={!matchedVariant || buying}>{buying ? 'OPENING CHECKOUT…' : matchedVariant ? `ADD TO CART · ${price}` : loadFailed ? 'SHOPIFY TEMPORARILY UNAVAILABLE' : 'LOADING LIVE OPTIONS…'}</button>
+        <button className="product-buy" type="button" onClick={buy} disabled={!matchedVariant || buying}>{buyLabel}</button>
         <p className="product-secure">Secure Shopify checkout · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
       </div>
     </section>

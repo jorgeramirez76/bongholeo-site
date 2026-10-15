@@ -849,7 +849,8 @@ footer .logo-img {
   letter-spacing: .08em;
 }
 
-.merch-soon {
+.merch-soon,
+.merch-photo-note {
   position: absolute;
   z-index: 2;
   bottom: 13px;

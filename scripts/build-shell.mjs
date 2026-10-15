@@ -304,7 +304,7 @@ for (const product of products.filter((p) => p.route && p.page)) {
         <p>$${esc(product.price)} USD. Select a size and color for live availability and checkout.</p>
         <h2>Product details</h2>
         <ul>${product.page.features.map((feature) => `<li>${esc(feature)}</li>`).join('')}</ul>
-        <p>Colors: ${product.colors.map(esc).join(', ')}. Sizes: ${product.sizes.map(esc).join(', ')}.</p>
+        <p>Colors: ${saleColors(product).map(esc).join(', ')}.${product.soldOutColors?.length ? ` Sold out: ${product.soldOutColors.map(esc).join(', ')}.` : ''} Sizes: ${product.sizes.map(esc).join(', ')}.</p>
         <h2>${esc(product.page.storyTitle)} ${esc(product.page.storyEmphasis)}</h2>
         <p>${esc(product.page.story)}</p>
         <p>New to the character? Read the <a href="/cranford-july-7-2026">account of Bongholeo’s July 7 Cranford appearance</a> and watch the meeting footage.</p>
