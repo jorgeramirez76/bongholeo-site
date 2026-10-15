@@ -5,7 +5,7 @@ import './index.css'
 import { shopConfigured, fetchProducts, createCheckout, formatPrice, failureReason, DISCOUNT_CODE } from './shop.js'
 import { videos, press, faqs, appearances, stats, products, site } from './facts.js'
 import { LATEST_COUNT, routeVideos } from './latest-videos.js'
-import { CARD_SIZES, sizedImages, srcSetFor } from './merch-images.js'
+import { CARD_SIZES, srcSetFor } from './merch-images.js'
 
 const merch = products.map((p, i) => ({
   id: p.handle || `fallback-${i}`, name: p.name, edition: 'BONGHOLEO', copy: p.description,
@@ -14,11 +14,14 @@ const merch = products.map((p, i) => ({
   bg: '#e9e5df', photo: true,
 }))
 const enabledProductHandles = new Set(products.map((product) => product.handle))
-// Local product photos that have smaller copies for srcset (see merch-images.js).
-const sizedPhotos = new Set(sizedImages(products))
-const CardImage = ({ src, alt }) => sizedPhotos.has(src)
-  ? <img src={src} srcSet={srcSetFor(src)} sizes={CARD_SIZES} alt={alt} loading="lazy" />
-  : <img src={src} alt={alt} loading="lazy" />
+// Local product photos with smaller copies get a srcset (see merch-images.js);
+// Shopify CDN photos and photos still without copies are served as they are.
+const CardImage = ({ src, alt }) => {
+  const srcSet = srcSetFor(src)
+  return srcSet
+    ? <img src={src} srcSet={srcSet} sizes={CARD_SIZES} alt={alt} loading="lazy" />
+    : <img src={src} alt={alt} loading="lazy" />
+}
 
 // Shopify's CDN resizes on request; without a width it ships the raw upload.
 const cdnImage = (url, width = 800) => (url ? `${url}${url.includes('?') ? '&' : '?'}width=${width}` : url)

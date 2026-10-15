@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { track } from '@vercel/analytics'
 import { DISCOUNT_CODE, createCheckout, failureReason, fetchProduct, formatPrice, shopConfigured } from './shop.js'
 import { products, site } from './facts.js'
-import { MAIN_SIZES, THUMB_SIZES, resized, srcSetFor } from './merch-images.js'
+import { MAIN_SIZES, THUMB_SIZES, srcSetFor, thumbFor } from './merch-images.js'
 import './product.css'
 
 const HANDLE = document.body.dataset.productHandle || 'bongholeo-in-cuffs-tee'
@@ -127,10 +127,10 @@ export default function ProductPage() {
 
     <section className="product-layout" aria-labelledby="product-title">
       <div className="product-media">
-        <div className="product-main-image"><img src={activeImage.src} srcSet={srcSetFor(activeImage.src)} sizes={MAIN_SIZES} alt={activeImage.alt} /></div>
+        <div className="product-main-image"><img src={activeImage.src} srcSet={srcSetFor(activeImage.src)} sizes={srcSetFor(activeImage.src) && MAIN_SIZES} alt={activeImage.alt} /></div>
         {photoNote && <p className="product-photo-note">{photoNote}</p>}
         <div className="product-thumbs" aria-label="Product photographs">
-          {facts.gallery.map((image) => <button type="button" key={image.src} className={activeImage.src === image.src ? 'is-active' : undefined} onClick={() => setActiveImage(image)} aria-label={`Show ${image.alt}`} aria-pressed={activeImage.src === image.src}><img src={resized(image.src, 320)} srcSet={srcSetFor(image.src)} sizes={THUMB_SIZES} alt="" decoding="async" /></button>)}
+          {facts.gallery.map((image) => <button type="button" key={image.src} className={activeImage.src === image.src ? 'is-active' : undefined} onClick={() => setActiveImage(image)} aria-label={`Show ${image.alt}`} aria-pressed={activeImage.src === image.src}><img src={thumbFor(image.src)} srcSet={srcSetFor(image.src)} sizes={srcSetFor(image.src) && THUMB_SIZES} alt="" decoding="async" /></button>)}
         </div>
       </div>
 

@@ -11,7 +11,7 @@ The official Bongholeo site: a Vite + React storefront and public-record page. M
 ## Where things live
 
 - `src/facts.js` is the single source of truth for everything the site states (videos, press, appearances, FAQs, products). `src/pending-products.js` holds the In Cuffs hoodie facts, switched on by `src/product-flags.js`.
-- `scripts/build-shell.mjs` runs before every build and generates the crawler HTML, JSON-LD, product-page offers, `public/llms.txt`, `public/sitemap.xml` and `public/shipping-returns.html` from those facts. Edit facts, not the generated output.
+- `scripts/build-shell.mjs` runs before every build and generates the crawler HTML, JSON-LD, product-page offers, `public/llms.txt`, `public/sitemap.xml`, `public/shipping-returns.html` and `src/merch-sized.js` from those facts. Edit facts, not the generated output.
 - `src/merch-policy.js` holds the shipping and returns policy and the seller-of-record line (Flylyfe).
 - `src/shop.js` talks to Shopify from the browser through `src/storefront.js`, which cuts off a read that hangs for 8 seconds so it is retried (`src/retry.js`) instead of loading forever; `src/shop-config.js` holds the API version and the 15%-off code.
 - `src/attribution.js` records where a visit came from (UTM tags, referring site, landing page) and `src/shop.js` sends it with the cart, so Shopify shows each order's source under Additional details. Tag links you post, for example `https://bongholeo.com/?utm_source=instagram&utm_medium=bio`.
@@ -41,7 +41,7 @@ Run `npm run lint`, `npm test` and `npm run build` before pushing to `main`.
 
 ## Adding product photos
 
-Product photos live in `public/media/merch/` as 1024 × 1536 WebP files and are listed in a product's `gallery` / `imagesByColor` in `src/facts.js` (or `src/pending-products.js`). After adding one, run `npm run merch-sizes` and commit the `-320w` and `-640w` copies it makes; the build stops if a copy is missing.
+Product photos live in `public/media/merch/` as 1024 × 1536 WebP files and are listed in a product's `gallery` / `imagesByColor` in `src/facts.js` (or `src/pending-products.js`). After adding one, run `npm run merch-sizes` (needs ffmpeg) and commit the `-320w` and `-640w` copies it makes. If you cannot run it, the site still builds and deploys: the build prints a warning and that photo is served full size (slower on phones) until the copies are added. `src/merch-sized.js` records which photos have their copies; the build rewrites it, so commit it when it changes.
 
 ## When Shopify changes
 
