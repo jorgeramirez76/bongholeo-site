@@ -14,11 +14,15 @@ import { MAIN_SIZES, MERCH_WIDTHS, allSizes, resized, sizedImages } from '../src
 const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
 const today = new Date().toISOString().slice(0, 10)
-// The event page is a fixed historical account; bump this only when it is edited.
+// The event page is a fixed historical account; bump this only when it is
+// edited. It sets both the sitemap date and the page's Article dateModified.
 const cranfordUpdated = '2026-10-14'
 // Update when the homepage copy or navigation changes, never just on a build.
 const homeUpdated = policyUpdated
 const newestHome = [homeUpdated, ...appearances.map((a) => a.date), ...press.map((p) => p.dateISO), ...products.map((p) => p.lastmod)].filter(Boolean).sort().pop()
+
+// "2026-10-14" → "October 14, 2026"
+const longDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -325,7 +329,8 @@ writeFileSync(file('index.html'), html)
 
 // The event page shares the same generated head fragments where it can.
 const cranford = readFileSync(file('cranford-july-7-2026.html'), 'utf8')
-writeFileSync(file('cranford-july-7-2026.html'), between(cranford, 'MERCH', cranfordMerch))
+if (!/"dateModified": "[^"]*"/.test(cranford)) throw new Error('cranford-july-7-2026.html: missing Article dateModified')
+writeFileSync(file('cranford-july-7-2026.html'), between(cranford, 'MERCH', cranfordMerch).replace(/"dateModified": "[^"]*"/, `"dateModified": "${cranfordUpdated}"`))
 writeFileSync(file('public/llms.txt'), llms)
 writeFileSync(file('public/sitemap.xml'), sitemap)
 writeFileSync(file('src/merch-sized.js'), sizedManifest)
@@ -422,7 +427,7 @@ writeFileSync(file('public/shipping-returns.html'), `<!doctype html>
 <script defer src="/_vercel/insights/script.js"></script>
 <style>body{margin:0;background:#f3ead4;color:#17121d;font-family:Arial,sans-serif;line-height:1.75}main{max-width:780px;margin:auto;padding:40px 24px 72px}a{color:inherit;text-underline-offset:4px}h1{font-size:clamp(2rem,7vw,3.5rem);line-height:1.1}h2{margin-top:36px;font-size:1.4rem}nav{font-weight:bold}footer{border-top:1px solid;margin-top:40px;padding-top:24px}</style></head>
 <body><main><nav><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a></nav>
-<h1>Shipping &amp; returns</h1><p>For all official Bongholeo tees and hoodies. Updated September 30, 2026.</p>
+<h1>Shipping &amp; returns</h1><p>For all official Bongholeo tees and hoodies. Updated ${longDate(policyUpdated)}.</p>
 ${policySections.map(section => `<section><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p></section>`).join('\n')}
 <section><h2>Who processes your order</h2><p>${esc(seller.note)} Checkout is also covered by Flylyfe’s ${seller.policies.map((p) => `<a href="${esc(p.href)}">${esc(p.label.toLowerCase())}</a>`).join(', ').replace(/, (?=[^,]*$)/, ' and ')}.</p></section>
 <footer>Order questions? <a href="mailto:${site.email}">${site.email}</a><p><a href="/#shop">Back to official merch →</a></p></footer></main></body></html>
