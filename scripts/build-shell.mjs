@@ -6,7 +6,7 @@
 // unchanged facts produces byte-identical files.
 
 import { readFileSync, writeFileSync } from 'node:fs'
-import { site, seo, person, stats, videos, press, appearances, faqs, products } from '../src/facts.js'
+import { site, seo, person, stats, videos, press, appearances, faqs, products, saleColors } from '../src/facts.js'
 
 import { policyUpdated, policyPath, policySections, policySummary, merchantPolicy } from '../src/merch-policy.js'
 
@@ -330,9 +330,26 @@ for (const product of products.filter((p) => p.route && p.page)) {
   source = source.replace(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g, (tag, json) => {
     const data = JSON.parse(json)
     if (data['@type'] !== 'Product') return tag
+    // Price, offer count and description come from facts, never from the
+    // hand-written page, so the merchant markup cannot drift from the site.
+    data.description = product.description
+    if (data.offers['@type'] === 'AggregateOffer') {
+      const colorCount = product.colors?.length ? saleColors(product).length : 1
+      Object.assign(data.offers, { lowPrice: product.price, highPrice: product.price, offerCount: colorCount * (product.sizes?.length || 1) })
+    } else {
+      data.offers.price = product.price
+    }
     Object.assign(data.offers, merchantPolicy(product))
     return `<script type="application/ld+json">${JSON.stringify(data, null, 2)}</script>`
   })
+  // The hand-written <head> (title, meta and OG copy) must not advertise a
+  // colour Shopify will not sell.
+  const headCopy = source.slice(0, source.indexOf('</head>')).toLowerCase()
+  for (const color of product.soldOutColors || []) {
+    if (headCopy.includes(color.toLowerCase())) {
+      throw new Error(`${product.route}.html <head> still advertises sold-out colour "${color}"`)
+    }
+  }
   writeFileSync(path, source)
 }
 

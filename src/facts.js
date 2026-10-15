@@ -322,3 +322,9 @@ export const products = [
   },
   ...(features.inCuffsHoodie ? [inCuffsHoodieProduct] : []),
 ]
+
+// Colours a product can actually be bought in. `soldOutColors` lists colours
+// Shopify still shows but will not sell; they stay visible as "sold out" and
+// are left out of offer counts and descriptions.
+export const saleColors = (product) =>
+  (product.colors || []).filter((color) => !(product.soldOutColors || []).includes(color))
