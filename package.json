@@ -10,7 +10,8 @@
     "test": "node --test \"tests/**/*.test.js\"",
     "preview": "vite preview",
     "shell": "node scripts/build-shell.mjs",
-    "indexnow": "node scripts/indexnow.mjs"
+    "indexnow": "node scripts/indexnow.mjs",
+    "merch-sizes": "node scripts/merch-sizes.mjs"
   },
   "dependencies": {
     "@fontsource/archivo": "^5.2.8",

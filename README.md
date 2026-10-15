@@ -27,6 +27,7 @@ npm run lint      # oxlint
 npm test          # unit tests (node:test, no network)
 npm run build     # build-shell + vite build into dist/
 npm run indexnow  # after a deploy: ping IndexNow with every URL in public/sitemap.xml
+npm run merch-sizes # after adding a product photo: make its 320/640 px copies (needs ffmpeg)
 ```
 
 Run `npm run lint`, `npm test` and `npm run build` before pushing to `main`.
@@ -36,6 +37,10 @@ Run `npm run lint`, `npm test` and `npm run build` before pushing to `main`.
 - `VITE_SHOPIFY_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_TOKEN`, `VITE_SHOPIFY_COLLECTION`: the public Storefront API settings. Without them the shop shows "coming soon".
 - `CRON_SECRET`: when set, only Vercel's scheduled call can run the daily shop check.
 - `RESEND_API_KEY`, `RESEND_FROM`, `SHOP_HEALTH_ALERT_TO`: optional; when all three are set, the daily shop check emails any problem it finds. Without them, problems show only in Vercel's logs and cron history.
+
+## Adding product photos
+
+Product photos live in `public/media/merch/` as 1024 × 1536 WebP files and are listed in a product's `gallery` / `imagesByColor` in `src/facts.js` (or `src/pending-products.js`). After adding one, run `npm run merch-sizes` and commit the `-320w` and `-640w` copies it makes; the build stops if a copy is missing.
 
 ## When Shopify changes
 

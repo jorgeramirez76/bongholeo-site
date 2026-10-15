@@ -5,10 +5,11 @@
 // Runs before `vite build` (see package.json). Idempotent: running it twice with
 // unchanged facts produces byte-identical files.
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { site, seo, person, stats, videos, press, appearances, faqs, products, saleColors } from '../src/facts.js'
 
 import { policyUpdated, policyPath, policySections, policySummary, merchantPolicy, seller } from '../src/merch-policy.js'
+import { MAIN_SIZES, MERCH_WIDTHS, resized, sizedImages, srcSetFor } from '../src/merch-images.js'
 
 const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
@@ -281,6 +282,15 @@ ${urls
 
 /* ----------------------------------------------------------------- write --- */
 
+// Pages use srcset with smaller copies of each product photo; a missing copy
+// would be a broken image, so stop here instead.
+const missingPhotos = sizedImages(products)
+  .flatMap((src) => MERCH_WIDTHS.map((width) => resized(src, width)))
+  .filter((src) => !existsSync(file(`public${src}`)))
+if (missingPhotos.length) {
+  throw new Error(`Missing resized product photos: ${missingPhotos.join(', ')}. Run \`npm run merch-sizes\` (needs ffmpeg) and commit the new files.`)
+}
+
 let html = readFileSync(file('index.html'), 'utf8')
 html = between(html, 'SEO', head)
 html = between(html, 'LDJSON', ld)
@@ -302,7 +312,7 @@ for (const product of products.filter((p) => p.route && p.page)) {
         <nav aria-label="Breadcrumb"><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a> / ${esc(product.name)}</nav>
         <h1>${esc(product.name)}</h1>
         <p>${esc(product.page.lead)}</p>
-        <img src="${esc(product.gallery[0].src)}" alt="${esc(product.gallery[0].alt)}" width="1024" height="1536" style="max-width:340px;width:100%;height:auto" />
+        <img src="${esc(product.gallery[0].src)}" srcset="${esc(srcSetFor(product.gallery[0].src))}" sizes="${MAIN_SIZES}" alt="${esc(product.gallery[0].alt)}" width="1024" height="1536" style="max-width:340px;width:100%;height:auto" />
         <p>$${esc(product.price)} USD. Select a size and color for live availability and checkout.</p>
         <h2>Product details</h2>
         <ul>${product.page.features.map((feature) => `<li>${esc(feature)}</li>`).join('')}</ul>
