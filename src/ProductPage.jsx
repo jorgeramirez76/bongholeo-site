@@ -137,7 +137,7 @@ export default function ProductPage() {
 
         <button className="product-buy" type="button" onClick={buy} disabled={!matchedVariant || buying}>{buyLabel}</button>
         {checkoutFailed && <p className="product-error" role="alert">Checkout didn’t open. Please try again — if it keeps failing, email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>}
-        <p className="product-secure">Secure Shopify checkout · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
+        <p className="product-secure">Secure Shopify checkout by Flylyfe, which processes the order · produced and fulfilled through Apliiq · no order is placed until checkout is completed</p>
       </div>
     </section>
 

@@ -256,7 +256,7 @@ export const faqs = [
   },
   {
     q: 'Where can I buy Bongholeo merch?',
-    a: 'Official Bongholeo merch — including the "Gavels The Truth" crest tee, the "In Cuffs" illustrated tee, and the heavyweight hoodie — is sold on this site at bongholeo.com, printed to order and checked out through Shopify.',
+    a: 'Official Bongholeo merch — including the "Gavels The Truth" crest tee, the "In Cuffs" illustrated tee, and the heavyweight hoodie — is sold here at bongholeo.com and printed to order. Checkout runs on the secure Shopify store of Flylyfe, which processes the orders, so receipts and card statements may show Flylyfe.',
   },
 ]
 

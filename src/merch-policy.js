@@ -6,6 +6,18 @@ export const policySections = [
   { title: 'Shipping rates and destinations', text: 'We ship worldwide to 200+ countries, excluding Russia and Belarus. Shipping is calculated by weight at checkout: US standard shipping starts at $11.49 for one tee, and international shipping starts at $19.49 for one tee. Hoodies and orders with multiple items may cost more. Your final shipping charge is shown at checkout. International customers are responsible for import duties, VAT and customs charges due on delivery.' },
   { title: '30-day returns and exchanges', text: 'Unworn, unwashed items in their original condition can be returned for an exchange or refund within 30 days of delivery. Customers pay return shipping for both US and international returns. To start a return or exchange, email admin@bongholeo.com with your order details for return instructions.' },
 ]
+// Checkout runs on the Flylyfe Shopify store, so Flylyfe is the merchant
+// buyers see at checkout, on receipts and possibly on card statements.
+export const seller = {
+  name: 'Flylyfe',
+  url: 'https://shop.flylyfe.com',
+  note: 'Orders are processed by Flylyfe (shop.flylyfe.com), the Shopify store that runs our checkout, so your receipt and card statement may show Flylyfe.',
+  policies: [
+    { label: 'Privacy policy', href: 'https://shop.flylyfe.com/policies/privacy-policy' },
+    { label: 'Terms of service', href: 'https://shop.flylyfe.com/policies/terms-of-service' },
+    { label: 'Refund policy', href: 'https://shop.flylyfe.com/policies/refund-policy' },
+  ],
+}
 export const policySummary = 'Printed to order in 7–10 business days; US delivery usually adds 2–7 business days after shipment. Weight-based shipping is calculated at checkout. Unworn, unwashed items in original condition qualify for returns or exchanges within 30 days of delivery; customers pay return shipping.'
 export function merchantPolicy(product) {
   const policy = {

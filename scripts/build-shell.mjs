@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { site, seo, person, stats, videos, press, appearances, faqs, products, saleColors } from '../src/facts.js'
 
-import { policyUpdated, policyPath, policySections, policySummary, merchantPolicy } from '../src/merch-policy.js'
+import { policyUpdated, policyPath, policySections, policySummary, merchantPolicy, seller } from '../src/merch-policy.js'
 
 const root = new URL('../', import.meta.url)
 const file = (p) => new URL(p, root)
@@ -190,7 +190,7 @@ const staticBlock = [
   ),
   '      </ul>',
   h2('Shipping & returns'),
-  `<p>${esc(policySummary)} ${link(policyPath, 'Full shipping and return policy')}</p>`,
+  `<p>${esc(policySummary)} ${esc(seller.note)} ${link(policyPath, 'Full shipping and return policy')}</p>`,
   h2('Official merch'),
   '      <ul>',
   ...products.map((p) => `        <li>${p.route ? link(p.route, p.name) : esc(p.name)} — $${esc(p.price)}</li>`),
@@ -248,6 +248,8 @@ ${products.map((p) => `- ${p.name} — $${p.price}, printed to order, sold at ${
 ## Shipping and returns
 
 ${policySummary}
+
+${seller.note}
 
 Full policy: ${site.url}${policyPath}
 
@@ -308,7 +310,7 @@ for (const product of products.filter((p) => p.route && p.page)) {
         <h2>${esc(product.page.storyTitle)} ${esc(product.page.storyEmphasis)}</h2>
         <p>${esc(product.page.story)}</p>
         <p>New to the character? Read the <a href="/cranford-july-7-2026">account of Bongholeo’s July 7 Cranford appearance</a> and watch the meeting footage.</p>
-        <p>Secure Shopify checkout · produced and fulfilled through Apliiq.</p>
+        <p>Secure Shopify checkout · produced and fulfilled through Apliiq. ${esc(seller.note)}</p>
         <h2>Shipping &amp; returns</h2>
         <p>${esc(policySummary)} <a href="${policyPath}">Full shipping and return policy</a></p>
         <h2>More official Bongholeo merch</h2>
@@ -371,5 +373,6 @@ writeFileSync(file('public/shipping-returns.html'), `<!doctype html>
 <body><main><nav><a href="/">Bongholeo</a> / <a href="/#shop">Official merch</a></nav>
 <h1>Shipping &amp; returns</h1><p>For all official Bongholeo tees and hoodies. Updated September 30, 2026.</p>
 ${policySections.map(section => `<section><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p></section>`).join('\n')}
+<section><h2>Who processes your order</h2><p>${esc(seller.note)} Checkout is also covered by Flylyfe’s ${seller.policies.map((p) => `<a href="${esc(p.href)}">${esc(p.label.toLowerCase())}</a>`).join(', ').replace(/, (?=[^,]*$)/, ' and ')}.</p></section>
 <footer>Order questions? <a href="mailto:${site.email}">${site.email}</a><p><a href="/#shop">Back to official merch →</a></p></footer></main></body></html>
 `)
