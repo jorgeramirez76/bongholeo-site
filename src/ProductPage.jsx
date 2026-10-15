@@ -80,7 +80,7 @@ export default function ProductPage() {
   const matchedVariant = variants.find((variant) => variant.availableForSale && variant.selectedOptions.every((option) => selection[option.name] === option.value))
   const price = product ? formatPrice(product.priceRange.minVariantPrice) : `$${facts.price}`
   const buyLabel = buying ? 'OPENING CHECKOUT…'
-    : matchedVariant ? `ADD TO CART · ${price}`
+    : matchedVariant ? `BUY NOW · ${price}`
       : status === 'ready' ? `SOLD OUT IN THIS ${optionNames.includes('Color') ? 'COLOR/SIZE' : 'SIZE'}`
         : status === 'failed' ? 'SHOPIFY TEMPORARILY UNAVAILABLE'
           : status === 'missing' || status === 'off' ? 'CURRENTLY UNAVAILABLE'
