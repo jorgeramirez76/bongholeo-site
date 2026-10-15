@@ -2,7 +2,7 @@
 // Bump when the policy text, the seller line or the homepage copy changes: it
 // dates /shipping-returns ("Updated …") and is the floor for the homepage and
 // product-page sitemap dates (scripts/build-shell.mjs).
-export const policyUpdated = '2026-10-14'
+export const policyUpdated = '2026-10-15'
 export const policyPath = '/shipping-returns'
 export const policySections = [
   { title: 'Production and delivery', text: 'Every item is printed to order. Production takes 7–10 business days. US delivery usually takes another 2–7 business days after shipment. International delivery times vary by destination.' },
