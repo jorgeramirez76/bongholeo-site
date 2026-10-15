@@ -1,4 +1,4 @@
-import { test } from 'node:test'
+import { mock, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { findShopProblems } from '../src/shop-health.js'
 import { products, saleColors } from '../src/facts.js'
@@ -99,16 +99,65 @@ test('checkShop reports a Storefront outage and missing configuration', async ()
   assert.match((await checkShop({}))[0], /is not set/)
 })
 
+const fakeRes = () => ({ headers: {}, statusCode: 0, body: null,
+  setHeader(name, value) { this.headers[name] = value },
+  status(code) { this.statusCode = code; return this },
+  json(body) { this.body = body; return this } })
+
+// Sets (or, with undefined, removes) environment variables for one test and
+// restores them after, so tests behave the same in a Vercel build where the
+// real values are set.
+const withEnv = async (vars, run) => {
+  const saved = Object.fromEntries(Object.keys(vars).map((key) => [key, process.env[key]]))
+  const apply = (values) => { for (const [key, value] of Object.entries(values)) { if (value === undefined) delete process.env[key]; else process.env[key] = value } }
+  apply(vars)
+  try { return await run() } finally { apply(saved) }
+}
+
 test('handler refuses calls without the cron secret when one is set', async () => {
-  const res = { headers: {}, statusCode: 0, body: null,
-    setHeader(name, value) { this.headers[name] = value },
-    status(code) { this.statusCode = code; return this },
-    json(body) { this.body = body; return this } }
-  process.env.CRON_SECRET = 'test-secret'
-  try {
-    await handler({ headers: {} }, res)
-    assert.equal(res.statusCode, 401)
-  } finally {
-    delete process.env.CRON_SECRET
+  const res = fakeRes()
+  await withEnv({ CRON_SECRET: 'test-secret' }, () => handler({ headers: {} }, res))
+  assert.equal(res.statusCode, 401)
+})
+
+// A shop with one problem (the discount no longer applies), Resend configured,
+// and a record of every email the handler tries to send.
+const alertSetup = (cronSecret) => {
+  const emails = []
+  const shop = storefrontFake({ applicable: false })
+  const fetch = async (url, init) => {
+    if (url.startsWith('https://api.resend.com/')) {
+      emails.push(JSON.parse(init.body))
+      return new Response('{}', { status: 200 })
+    }
+    return shop(url, init)
   }
+  const vars = { ...env, VITE_SHOPIFY_COLLECTION: undefined, CRON_SECRET: cronSecret,
+    RESEND_API_KEY: 'resend-test-key', RESEND_FROM: 'shop-check@example.test', SHOP_HEALTH_ALERT_TO: 'owner@example.test' }
+  return { emails, fetch, vars }
+}
+const quietly = async (run) => {
+  const log = mock.method(console, 'error', () => {})
+  try { return await run() } finally { log.mock.restore() }
+}
+
+test('without CRON_SECRET anyone can run the check, but no alert email is sent', async () => {
+  const { emails, fetch, vars } = alertSetup(undefined)
+  const res = fakeRes()
+  await quietly(() => withEnv(vars, () => withFetch(fetch, () => handler({ headers: {} }, res))))
+  assert.equal(res.statusCode, 500)
+  assert.equal(res.body.problems.length, 1)
+  assert.equal(res.body.alerted, false)
+  assert.equal(emails.length, 0)
+})
+
+test('the scheduled call emails the problems it finds', async () => {
+  const { emails, fetch, vars } = alertSetup('test-secret')
+  const res = fakeRes()
+  await quietly(() => withEnv(vars, () => withFetch(fetch, () => handler({ headers: { authorization: 'Bearer test-secret' } }, res))))
+  assert.equal(res.statusCode, 500)
+  assert.equal(res.body.alerted, true)
+  assert.equal(emails.length, 1)
+  assert.deepEqual(emails[0].to, ['owner@example.test'])
+  assert.match(emails[0].text, /GAVELS15/)
 })

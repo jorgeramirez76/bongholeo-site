@@ -5,8 +5,11 @@
 //
 // Uses the same public Storefront token as the browser. A problem returns 500
 // and is logged, so it shows in Vercel → Logs and the cron history. It is also
-// emailed when RESEND_API_KEY, RESEND_FROM and SHOP_HEALTH_ALERT_TO are set.
-// Set CRON_SECRET in Vercel so only the scheduled run can call it.
+// emailed when RESEND_API_KEY, RESEND_FROM and SHOP_HEALTH_ALERT_TO are set,
+// but only on Vercel's scheduled call, which proves itself with CRON_SECRET.
+// Set CRON_SECRET in Vercel: then only the scheduled run can call this at all,
+// and without it nobody (the schedule included) can trigger an alert email,
+// so the URL cannot be used to flood the inbox or spend the Resend quota.
 import { products } from '../../src/facts.js'
 import { API_VERSION, DEFAULT_COLLECTION, DISCOUNT_CODE } from '../../src/shop-config.js'
 import { findShopProblems } from '../../src/shop-health.js'
@@ -93,7 +96,8 @@ export async function checkShop(env = process.env) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store')
   const secret = process.env.CRON_SECRET
-  if (secret && req.headers.authorization !== `Bearer ${secret}`) {
+  const scheduled = Boolean(secret) && req.headers.authorization === `Bearer ${secret}`
+  if (secret && !scheduled) {
     return res.status(401).json({ ok: false, error: 'unauthorized' })
   }
 
@@ -102,10 +106,14 @@ export default async function handler(req, res) {
 
   console.error(`shop-health: ${problems.length} problem(s)\n- ${problems.join('\n- ')}`)
   let alerted = false
-  try {
-    alerted = await emailAlert(problems)
-  } catch (error) {
-    console.error(`shop-health: alert email failed: ${error.message}`)
+  if (!scheduled) {
+    console.error('shop-health: alert email not sent: set CRON_SECRET in Vercel to turn on email alerts')
+  } else {
+    try {
+      alerted = await emailAlert(problems)
+    } catch (error) {
+      console.error(`shop-health: alert email failed: ${error.message}`)
+    }
   }
   return res.status(500).json({ ok: false, problems, alerted })
 }

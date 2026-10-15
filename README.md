@@ -36,8 +36,8 @@ Run `npm run lint`, `npm test` and `npm run build` before pushing to `main`.
 ## Environment variables (Vercel → bongholeo-site → Settings → Environment Variables)
 
 - `VITE_SHOPIFY_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_TOKEN`, `VITE_SHOPIFY_COLLECTION`: the public Storefront API settings. Without them the shop shows "coming soon".
-- `CRON_SECRET`: when set, only Vercel's scheduled call can run the daily shop check.
-- `RESEND_API_KEY`, `RESEND_FROM`, `SHOP_HEALTH_ALERT_TO`: optional; when all three are set, the daily shop check emails any problem it finds. Without them, problems show only in Vercel's logs and cron history.
+- `CRON_SECRET`: when set, only Vercel's scheduled call can run the daily shop check. It is also required for email alerts: without it the check still runs and logs, but never sends email, so nobody can use the URL to flood the inbox.
+- `RESEND_API_KEY`, `RESEND_FROM`, `SHOP_HEALTH_ALERT_TO`: optional; when all three are set (and `CRON_SECRET` is), the daily shop check emails any problem it finds. Without them, problems show only in Vercel's logs and cron history.
 
 ## Adding product photos
 
